@@ -2,19 +2,16 @@
 Orchestrator akışı:
 
   run_next_stage(pipeline)
-      -> context'i önceki loglardan topla
+      -> context'i önceki loglardan topla (pipeline_id dahil)
       -> ilgili ajanı çağır
+      -> coding aşamasıysa üretilen dosyaları workspace'e yaz
       -> PipelineLog yaz (HER ZAMAN - onaydan bağımsız)
       -> bu aşamaya yönelik bekleyen (pending) AgentMessage var mı bak
            - varsa: revizyon turu say, limit aşılmadıysa ajanı
-             revision_note ile tekrar çalıştır (yeni bir log daha yazılır)
+             revision_note ile tekrar çalıştır
            - limit aşıldıysa: pipeline.status = escalated, kullanıcıya bırak
-      -> stage_config.requires_approval ise: pipeline.status = waiting_approval,
-         current_stage aynı kalır (approve_stage çağrılana kadar ilerlemez)
-      -> değilse: bir sonraki aşamaya geç, (otomatik) tekrar çağrılabilir
-
-  approve_stage(pipeline)  -> kullanıcı onayladı, bir sonraki aşamaya geç
-  submit_message(...)      -> ajanlar arası / kullanıcıdan gelen düzeltme talebi
+      -> stage_config.requires_approval ise: pipeline.status = waiting_approval
+      -> değilse: bir sonraki aşamaya geç
 """
 from datetime import datetime
 from typing import Optional
@@ -26,6 +23,7 @@ from models import (
     StageName, PipelineStatus, MessageStatus, MessageSeverity, MessageType,
 )
 from agents import AGENT_MAP
+from workspace import write_files_to_workspace
 
 STAGE_ORDER = [
     StageName.research,
@@ -35,14 +33,13 @@ STAGE_ORDER = [
     StageName.marketing,
 ]
 
-# stage_configs'te model belirtilmemişse (veya hiç config yoksa) kullanılacak
-# görev-karmaşıklığına göre eşleştirilmiş varsayılanlar.
+# Çoklu sağlayıcı varsayılanları (kullanıcı veya config ile değiştirilebilir)
 DEFAULT_MODELS = {
-    StageName.research: "claude-sonnet-5",
-    StageName.planning: "claude-opus-5",
-    StageName.coding: "claude-sonnet-5",
-    StageName.testing: "claude-haiku-4-5-20251001",
-    StageName.marketing: "claude-sonnet-5",
+    StageName.research: "claude-sonnet-5",       # veya gemini-2.5-flash / gpt-4o
+    StageName.planning: "claude-opus-5",         # veya o3-mini / gemini-2.5-pro
+    StageName.coding: "deepseek-coder",          # DeepSeek Coder / DeepSeek v4
+    StageName.testing: "claude-haiku-4-5-20251001",  # veya gpt-4o-mini
+    StageName.marketing: "claude-sonnet-5",      # veya gpt-4o / gemini-2.5-flash
 }
 
 
@@ -78,8 +75,8 @@ def _get_stage_config(db: Session, pipeline_id: str, stage: StageName) -> StageC
 
 
 def _build_context(db: Session, pipeline: Pipeline) -> dict:
-    """Önceki aşamaların en son (en yüksek revision_round) çıktılarını topla."""
-    context = {"idea_text": pipeline.idea_text}
+    """Önceki aşamaların en son çıktılarını topla, pipeline_id'yi ekle."""
+    context = {"idea_text": pipeline.idea_text, "pipeline_id": pipeline.id}
     logs = (
         db.query(PipelineLog)
         .filter(PipelineLog.pipeline_id == pipeline.id)
@@ -88,18 +85,13 @@ def _build_context(db: Session, pipeline: Pipeline) -> dict:
     )
     latest_by_stage = {}
     for log in logs:
-        latest_by_stage[log.stage] = log  # sondaki kazanır
+        latest_by_stage[log.stage] = log
     for stage, log in latest_by_stage.items():
         context[f"{stage.value}_report"] = log.full_output
     return context
 
 
 def _pending_message_for_stage(db: Session, pipeline_id: str, stage: StageName):
-    """
-    Sadece severity=blocking olan mesajlar otomatik revizyon tetikler.
-    important/minor mesajlar kaydedilir ve görünür kalır ama pipeline'ı
-    durdurmaz - ajan isterse ileride bunları da context'e dahil edebilirsin.
-    """
     return (
         db.query(AgentMessage)
         .filter(
@@ -118,8 +110,6 @@ def run_stage(db: Session, pipeline: Pipeline) -> Pipeline:
     cfg = _get_stage_config(db, pipeline.id, stage)
 
     if not cfg.enabled:
-        # Ajanı hiç çağırma - config üzerinden kapatılmış, doğrudan bir sonraki
-        # aşamaya geç. Yine de /logs ve /report'ta görünsün diye bir not bırak.
         skip_log = PipelineLog(
             pipeline_id=pipeline.id,
             stage=stage,
@@ -136,7 +126,6 @@ def run_stage(db: Session, pipeline: Pipeline) -> Pipeline:
     context = _build_context(db, pipeline)
     model = _resolve_model(cfg, stage)
 
-    # bu aşama için daha önce kaç revizyon yapılmış say
     prior_rounds = (
         db.query(PipelineLog)
         .filter(PipelineLog.pipeline_id == pipeline.id, PipelineLog.stage == stage)
@@ -148,6 +137,15 @@ def run_stage(db: Session, pipeline: Pipeline) -> Pipeline:
 
     result = agent_fn(context, revision_note=revision_note, model=model)
 
+    # Kodlama aşamasında üretilen dosyaları fiziksel çalışma alanına yaz
+    if stage == StageName.coding and isinstance(result.get("full_output"), dict):
+        files = result["full_output"].get("files", [])
+        if files:
+            try:
+                write_files_to_workspace(pipeline.id, files)
+            except Exception as e:
+                result["summary"] += f" (Uyarı: Dosyalar diske yazılamadı: {e})"
+
     log = PipelineLog(
         pipeline_id=pipeline.id,
         stage=stage,
@@ -155,10 +153,10 @@ def run_stage(db: Session, pipeline: Pipeline) -> Pipeline:
         summary=result["summary"],
         full_output=result["full_output"],
         model=model,
-        revision_round=prior_rounds,  # 0 = ilk deneme
+        revision_round=prior_rounds,
     )
     db.add(log)
-    db.flush()  # log.id'yi commit etmeden alabilmek için
+    db.flush()
 
     if pending:
         pending.status = MessageStatus.processed
@@ -166,7 +164,6 @@ def run_stage(db: Session, pipeline: Pipeline) -> Pipeline:
         db.add(pending)
 
         if prior_rounds + 1 >= cfg.max_revision_rounds:
-            # limit aşıldı -> otomatik ilerlemeyi durdur, kullanıcıya bırak
             pipeline.status = PipelineStatus.escalated
             db.add(pipeline)
             db.commit()
@@ -175,8 +172,6 @@ def run_stage(db: Session, pipeline: Pipeline) -> Pipeline:
 
     question_text = result.get("question")
     if question_text:
-        # ajan ilerlemeden önce bir açıklamaya ihtiyaç duyuyor - onay/advance
-        # akışına hiç girmeden kullanıcıya sor ve pipeline'ı durdur.
         q = AgentMessage(
             pipeline_id=pipeline.id,
             from_agent=f"{stage.value}_agent",
@@ -202,7 +197,6 @@ def run_stage(db: Session, pipeline: Pipeline) -> Pipeline:
         db.refresh(pipeline)
         return pipeline
 
-    # onay gerekmiyor -> otomatik ilerle
     return _advance(db, pipeline)
 
 
@@ -247,11 +241,7 @@ def submit_message(db: Session, pipeline_id: str, payload) -> AgentMessage:
 
 
 def rerun_current_stage(db: Session, pipeline: Pipeline) -> Pipeline:
-    """
-    Bekleyen bir mesaj (düzeltme talebi) işlendikten sonra aynı aşamayı
-    tekrar çalıştırmak için. escalated durumdaki bir pipeline'da kullanıcı
-    yeni bir mesaj bıraktıktan sonra manuel tetiklenebilir.
-    """
+    """Mevcut aşamayı tekrar çalıştır."""
     pipeline.status = PipelineStatus.running
     db.add(pipeline)
     db.commit()
@@ -260,13 +250,7 @@ def rerun_current_stage(db: Session, pipeline: Pipeline) -> Pipeline:
 
 
 def answer_question(db: Session, pipeline: Pipeline, question_id: str, answer_text: str) -> Pipeline:
-    """
-    Kullanıcı (veya başka bir ajan) bekleyen bir 'question' mesajını cevaplar.
-    Cevap, sorulan ajana yönelik yeni bir blocking mesaj olarak kaydedilir;
-    bu da _pending_message_for_stage tarafından yakalanıp aynı aşama tekrar
-    çalıştırıldığında otomatik olarak revision_note'a dönüşür - yani soran
-    ajan, sorduğu sorunun cevabını normal revizyon akışıyla alır.
-    """
+    """Bekleyen bir soruyu yanıtla."""
     question = db.get(AgentMessage, question_id)
     if not question or question.pipeline_id != pipeline.id:
         raise ValueError("Soru bulunamadı.")

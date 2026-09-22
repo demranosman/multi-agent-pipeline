@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ajan Hattı Dashboard | AI Multi-Agent Pipeline</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: #111827;
+      --card-border: #1f2937;
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --purple: #8b5cf6;
+      --indigo: #6366f1;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 320px;
+      background: #0f172a;
+      border-right: 1px solid var(--card-border);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      position: sticky;
+      top: 0;
+    }
+    .sidebar-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-badge {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--primary), var(--purple));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    .brand-title { font-size: 16px; font-weight: 700; color: #fff; }
+    .brand-sub { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .new-btn {
+      margin: 16px 20px;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, var(--primary), var(--indigo));
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .new-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
+
+    .pipeline-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 16px;
+    }
+    .pipeline-item {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .pipeline-item:hover { background: rgba(255, 255, 255, 0.05); }
+    .pipeline-item.active {
+      background: rgba(59, 130, 246, 0.12);
+      border-color: rgba(59, 130, 246, 0.4);
+    }
+    .pi-idea {
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 6px;
+    }
+    .pi-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Main Content */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 30px 40px;
+    }
+
+    /* Top Banner / Active Pipeline Card */
+    .top-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      position: relative;
+    }
+    .top-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+    .idea-text {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      max-width: 80%;
+      line-height: 1.4;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-running { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .badge-waiting_approval { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-waiting_response { background: rgba(139, 92, 246, 0.2); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); }
+    .badge-completed { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-escalated { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    /* Timeline Stepper */
+    .stepper {
+      display: flex;
+      justify-content: space-between;
+      margin: 24px 0 10px 0;
+      position: relative;
+    }
+    .stepper::before {
+      content: '';
+      position: absolute;
+      top: 20px;
+      left: 30px;
+      right: 30px;
+      height: 2px;
+      background: var(--card-border);
+      z-index: 1;
+    }
+    .step-node {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+    .step-circle {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #1e293b;
+      border: 2px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      transition: all 0.3s;
+    }
+    .step-node.completed .step-circle {
+      background: var(--success);
+      border-color: var(--success);
+      color: white;
+    }
+    .step-node.active .step-circle {
+      background: var(--primary);
+      border-color: #93c5fd;
+      color: white;
+      box-shadow: 0 0 16px rgba(59, 130, 246, 0.6);
+      transform: scale(1.08);
+    }
+    .step-name { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+    .step-node.active .step-name { color: #fff; }
+
+    /* Action Banner */
+    .action-bar {
+      margin-top: 20px;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid var(--card-border);
+    }
+    .action-buttons { display: flex; gap: 12px; }
+    .btn {
+      padding: 9px 18px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-success { background: var(--success); color: white; }
+    .btn-success:hover { background: #059669; }
+    .btn-warning { background: var(--warning); color: #111; }
+    .btn-warning:hover { background: #d97706; }
+    .btn-secondary { background: #374151; color: white; }
+    .btn-secondary:hover { background: #4b5563; }
+    .btn-outline { background: transparent; border: 1px solid var(--card-border); color: #d1d5db; }
+    .btn-outline:hover { background: rgba(255, 255, 255, 0.05); }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 12px;
+      border-bottom: 1px solid var(--card-border);
+      margin-bottom: 20px;
+    }
+    .tab-btn {
+      padding: 10px 16px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover { color: #fff; }
+    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    /* Tab Content Cards */
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Quality Grid */
+    .quality-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .q-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 14px;
+    }
+    .q-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .q-tool { font-weight: 700; font-size: 14px; }
+    .q-badge { font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600; }
+    .q-pass { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .q-warn { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+    .q-fail { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+    .q-skip { background: rgba(156, 163, 175, 0.2); color: #9ca3af; }
+    .q-summary { font-size: 12px; color: var(--text-muted); }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 13px;
+    }
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--card-border);
+    }
+    th { color: var(--text-muted); font-weight: 600; }
+
+    /* Code Viewer */
+    .code-box {
+      font-family: 'JetBrains Mono', monospace;
+      background: #090d16;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 16px;
+      font-size: 13px;
+      line-height: 1.5;
+      overflow-x: auto;
+      max-height: 480px;
+      color: #e2e8f0;
+      white-space: pre;
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal.open { display: flex; }
+    .modal-content {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      width: 520px;
+      max-width: 90%;
+      padding: 24px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+    .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+    .input-group { margin-bottom: 16px; }
+    .input-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
+    .textarea, .select, .input {
+      width: 100%;
+      background: #0b0f19;
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      color: #fff;
+      padding: 10px;
+      font-family: inherit;
+      font-size: 13px;
+    }
+    .textarea { resize: vertical; min-height: 100px; }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-badge">⚡</div>
+      <div>
+        <div class="brand-title">Ajan Hattı</div>
+        <div class="brand-sub">Multi-Agent Pipeline</div>
+      </div>
+    </div>
+
+    <button class="new-btn" onclick="openNewModal()">
+      <span>+</span> Yeni Pipeline Başlat
+    </button>
+
+    <div class="pipeline-list" id="pipelineList">
+      <div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 13px;">
+        Yükleniyor...
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main View -->
+  <main class="main" id="mainContainer">
+    <!-- Active Pipeline Card -->
+    <div class="top-card" id="topCard">
+      <div class="top-header">
+        <div>
+          <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;" id="pipeId">ID: -</div>
+          <div class="idea-text" id="pipeIdea">Bir pipeline seçin veya yeni başlatın</div>
+        </div>
+        <span class="badge badge-running" id="pipeStatusBadge">Hazır</span>
+      </div>
+
+      <!-- Stepper -->
+      <div class="stepper" id="stepper">
+        <div class="step-node" id="step-research" onclick="selectStageTab('research')">
+          <div class="step-circle">🔍</div>
+          <span class="step-name">Research</span>
+        </div>
+        <div class="step-node" id="step-planning" onclick="selectStageTab('planning')">
+          <div class="step-circle">🏗️</div>
+          <span class="step-name">Planning</span>
+        </div>
+        <div class="step-node" id="step-coding" onclick="selectStageTab('coding')">
+          <div class="step-circle">💻</div>
+          <span class="step-name">Coding</span>
+        </div>
+        <div class="step-node" id="step-testing" onclick="selectStageTab('testing')">
+          <div class="step-circle">🧪</div>
+          <span class="step-name">Testing</span>
+        </div>
+        <div class="step-node" id="step-marketing" onclick="selectStageTab('marketing')">
+          <div class="step-circle">📣</div>
+          <span class="step-name">Marketing</span>
+        </div>
+      </div>
+
+      <!-- Action Box -->
+      <div class="action-bar" id="actionBar">
+        <div id="actionStatusText" style="font-size: 13px; color: var(--text-muted);">
+          İşlem durumu bekleniyor...
+        </div>
+        <div class="action-buttons" id="actionButtons">
+          <!-- Dinamik butonlar -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('reports')">📑 Aşama Raporları</button>
+      <button class="tab-btn" onclick="switchTab('quality')">🛡️ Kalite & Test (quality_checker)</button>
+      <button class="tab-btn" onclick="switchTab('files')">📂 Kod Dosyaları (<span id="filesCount">0</span>)</button>
+      <button class="tab-btn" onclick="switchTab('messages')">💬 Mesajlar & Sorular</button>
+      <button class="tab-btn" onclick="switchTab('settings')">⚙️ Model & Aşama Ayarları</button>
+    </div>
+
+    <!-- Tab 1: Stage Reports -->
+    <div class="tab-pane active" id="tab-reports">
+      <div id="logsContainer">
+        <div class="card"><p style="color: var(--text-muted);">Aşama raporları burada görüntülenecektir.</p></div>
+      </div>
+    </div>
+
+    <!-- Tab 2: Quality Checker -->
+    <div class="tab-pane" id="tab-quality">
+      <div class="card">
+        <div class="card-title">🛡️ Otomatik Kod Kalitesi ve Test Denetimi</div>
+        <div class="quality-grid" id="qualityCards">
+          <!-- Ruff, Mypy, Bandit, Vulture, Pytest kartları -->
+        </div>
+        <div id="qualityIssuesTableContainer">
+          <h4 style="margin: 16px 0 8px 0; font-size: 14px;">Tespit Edilen Bulgular</h4>
+          <table id="qualityIssuesTable">
+            <thead>
+              <tr><th>Araç</th><th>Konum</th><th>Seviye</th><th>Mesaj</th></tr>
+            </thead>
+            <tbody id="qualityIssuesBody">
+              <tr><td colspan="4" style="color: var(--text-muted);">Henüz kalite denetimi çalıştırılmadı.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3: Workspace Files -->
+    <div class="tab-pane" id="tab-files">
+      <div class="card">
+        <div class="card-title" style="justify-content: space-between;">
+          <span>📂 Fiziksel Çalışma Alanı Dosyaları (workspaces/)</span>
+          <select id="fileSelector" class="select" style="width: 250px;" onchange="loadFileContent(this.value)">
+            <option value="">Dosya seçin...</option>
+          </select>
+        </div>
+        <div class="code-box" id="fileContentBox">// Kod görüntülemek için yukarıdan dosya seçin.</div>
+      </div>
+    </div>
+
+    <!-- Tab 4: Messages -->
+    <div class="tab-pane" id="tab-messages">
+      <div class="card">
+        <div class="card-title">💬 Ajanlar Arası ve Kullanıcı İletişim Geçmişi</div>
+        <div id="messagesList" style="display: flex; flex-direction: column; gap: 12px;">
+          <p style="color: var(--text-muted);">Kayıtlı mesaj yok.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 5: Settings -->
+    <div class="tab-pane" id="tab-settings">
+      <div class="card">
+        <div class="card-title">⚙️ Aşama Başına Model ve Onay Ayarları</div>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+          Her aşama için Anthropic, OpenAI, DeepSeek veya Google Gemini modellerini atayabilirsiniz.
+        </p>
+        <table>
+          <thead>
+            <tr><th>Aşama</th><th>Model</th><th>Onay Gereksinimi</th><th>Durum</th><th>İşlem</th></tr>
+          </thead>
+          <tbody id="stageConfigBody">
+            <!-- Dinamik doldurulacak -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- New Pipeline Modal -->
+  <div class="modal" id="newModal">
+    <div class="modal-content">
+      <div class="modal-title">🚀 Yeni Fikir ile Pipeline Başlat</div>
+      <div class="input-group">
+        <label class="input-label">Fikrinizi veya Ürün Tanımınızı Yazın:</label>
+        <textarea id="newIdeaInput" class="textarea" placeholder="Örn: Evcil hayvan sahipleri için akıllı aşı ve veteriner randevu takip platformu..."></textarea>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="btn btn-secondary" onclick="closeNewModal()">İptal</button>
+        <button class="btn btn-success" onclick="startPipeline()">Başlat (Research)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Answer Modal -->
+  <div class="modal" id="answerModal">
+    <div class="modal-content">
+      <div class="modal-title">🤔 Ajan Sorusunu Yanıtla</div>
+      <div id="questionContent" style="margin-bottom: 14px; font-size: 14px; color: #cbd5e1; background: rgba(139,92,246,0.1); padding: 12px; border-radius: 6px; border-left: 3px solid var(--purple);">
+        -
+      </div>
+      <input type="hidden" id="answerMessageId">
+      <div class="input-group">
+        <label class="input-label">Cevabınız:</label>
+        <input type="text" id="answerInput" class="input" placeholder="Örn: Stripe kullanalım...">
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="btn btn-secondary" onclick="closeAnswerModal()">Kapat</button>
+        <button class="btn btn-success" onclick="sendAnswer()">Yanıtı İlet</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Revision Modal -->
+  <div class="modal" id="revisionModal">
+    <div class="modal-content">
+      <div class="modal-title">🔄 Düzeltme / Revizyon Talebi Gönder</div>
+      <div class="input-group">
+        <label class="input-label">Hedef Aşamaya Talimatınız:</label>
+        <textarea id="revisionContent" class="textarea" placeholder="Neyin düzeltilmesini veya değiştirilmesini istersiniz?"></textarea>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="btn btn-secondary" onclick="closeRevisionModal()">İptal</button>
+        <button class="btn btn-warning" onclick="sendRevision()">Revizyon Başlat</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let activePipelineId = null;
+    let currentPipeline = null;
+    let workspaceFiles = [];
+
+    const STAGES = ["research", "planning", "coding", "testing", "marketing"];
+
+    const MODEL_OPTIONS = [
+      { group: "Anthropic Claude", options: ["claude-sonnet-5", "claude-opus-5", "claude-haiku-4-5-20251001", "claude-3-7-sonnet-20250219"] },
+      { group: "DeepSeek", options: ["deepseek-coder", "deepseek-chat", "deepseek-v3", "deepseek-v4"] },
+      { group: "Google Gemini", options: ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"] },
+      { group: "OpenAI", options: ["gpt-4o", "gpt-4o-mini", "o3-mini", "o1"] },
+    ];
+
+    async function init() {
+      await loadPipelines();
+      initSettingsTable();
+    }
+
+    async function loadPipelines() {
+      try {
+        const res = await fetch("/pipelines");
+        const list = await res.json();
+        const container = document.getElementById("pipelineList");
+        container.innerHTML = "";
+
+        if (!list || list.length === 0) {
+          container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 13px;">Kayıtlı pipeline yok.</div>';
+          return;
+        }
+
+        list.forEach(p => {
+          const item = document.createElement("div");
+          item.className = `pipeline-item ${p.id === activePipelineId ? 'active' : ''}`;
+          item.onclick = () => selectPipeline(p.id);
+          item.innerHTML = `
+            <div class="pi-idea">${escapeHtml(p.idea_text)}</div>
+            <div class="pi-meta">
+              <span>${p.current_stage}</span>
+              <span style="font-weight:600; color:${getStatusColor(p.status)}">${p.status}</span>
+            </div>
+          `;
+          container.appendChild(item);
+        });
+
+        if (!activePipelineId && list.length > 0) {
+          selectPipeline(list[0].id);
+        }
+      } catch (err) {
+        console.error("Pipeline listesi yüklenemedi:", err);
+      }
+    }
+
+    async function selectPipeline(id) {
+      activePipelineId = id;
+      document.querySelectorAll(".pipeline-item").forEach(el => el.classList.remove("active"));
+      await refreshCurrentPipeline();
+    }
+
+    async function refreshCurrentPipeline() {
+      if (!activePipelineId) return;
+      try {
+        const res = await fetch(`/pipelines/${activePipelineId}`);
+        currentPipeline = await res.json();
+        renderTopCard(currentPipeline);
+        await Promise.all([
+          loadLogs(activePipelineId),
+          loadFiles(activePipelineId),
+          loadMessages(activePipelineId),
+        ]);
+      } catch (err) {
+        console.error("Pipeline detayı yüklenemedi:", err);
+      }
+    }
+
+    function renderTopCard(p) {
+      document.getElementById("pipeId").innerText = `ID: ${p.id}`;
+      document.getElementById("pipeIdea").innerText = p.idea_text;
+
+      const badge = document.getElementById("pipeStatusBadge");
+      badge.className = `badge badge-${p.status}`;
+      badge.innerText = p.status.replace("_", " ");
+
+      // Update Stepper
+      const currIdx = STAGES.indexOf(p.current_stage);
+      STAGES.forEach((stage, idx) => {
+        const el = document.getElementById(`step-${stage}`);
+        el.className = "step-node";
+        if (p.status === "completed" || idx < currIdx) {
+          el.classList.add("completed");
+        } else if (idx === currIdx) {
+          el.classList.add("active");
+        }
+      });
+
+      // Render Action Buttons
+      const actions = document.getElementById("actionButtons");
+      const statusText = document.getElementById("actionStatusText");
+      actions.innerHTML = "";
+
+      if (p.status === "waiting_approval") {
+        statusText.innerText = `[${p.current_stage.toUpperCase()}] aşaması tamamlandı, onayınızı bekliyor.`;
+        actions.innerHTML = `
+          <button class="btn btn-warning" onclick="openRevisionModal()">🔄 Revizyon İste</button>
+          <button class="btn btn-success" onclick="approveStage()">✅ Onayla & İlerlet</button>
+        `;
+      } else if (p.status === "waiting_response") {
+        statusText.innerText = `Ajan cevabınızı bekliyor.`;
+        actions.innerHTML = `
+          <button class="btn btn-warning" onclick="openAnswerModal()">🤔 Soruyu Yanıtla</button>
+        `;
+      } else if (p.status === "escalated") {
+        statusText.innerText = `Revizyon limitine ulaşıldı (Eskale).`;
+        actions.innerHTML = `
+          <button class="btn btn-warning" onclick="openRevisionModal()">Yeni Talimat Gir</button>
+          <button class="btn btn-success" onclick="approveStage()">Yine de Onayla & İlerlet</button>
+        `;
+      } else if (p.status === "completed") {
+        statusText.innerText = `Tüm aşamalar başarıyla tamamlandı!`;
+        actions.innerHTML = `
+          <a class="btn btn-secondary" href="/pipelines/${p.id}/report" download>📄 Raporu İndir (.md)</a>
+        `;
+      } else {
+        statusText.innerText = `Ajan çalışıyor (${p.current_stage})...`;
+        actions.innerHTML = `
+          <button class="btn btn-outline" onclick="refreshCurrentPipeline()">Yenile ↻</button>
+        `;
+      }
+    }
+
+    async function loadLogs(id) {
+      const res = await fetch(`/pipelines/${id}/logs`);
+      const logs = await res.json();
+      const container = document.getElementById("logsContainer");
+      container.innerHTML = "";
+
+      if (!logs || logs.length === 0) {
+        container.innerHTML = '<div class="card"><p style="color: var(--text-muted);">Henüz log kaydı yok.</p></div>';
+        return;
+      }
+
+      // Kalite raporunu da güncelle
+      let latestQualityReport = null;
+
+      logs.forEach(log => {
+        if (log.full_output && log.full_output.quality_report) {
+          latestQualityReport = log.full_output.quality_report;
+        }
+
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="card-title">
+            <span>[${log.stage.toUpperCase()}] ${log.agent}</span>
+            <span style="font-size: 11px; font-weight: normal; color: var(--text-muted);">
+              ${log.model ? `Model: ${log.model} • ` : ''} Deneme #${log.revision_round + 1}
+            </span>
+          </div>
+          <div style="font-size: 14px; margin-bottom: 12px; font-weight: 500; color: #60a5fa;">
+            ${escapeHtml(log.summary)}
+          </div>
+          <details style="cursor: pointer;">
+            <summary style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">Detaylı JSON Çıktısını Göster</summary>
+            <div class="code-box">${escapeHtml(JSON.stringify(log.full_output, null, 2))}</div>
+          </details>
+        `;
+        container.appendChild(card);
+      });
+
+      renderQualityReport(latestQualityReport);
+    }
+
+    function renderQualityReport(qr) {
+      const cards = document.getElementById("qualityCards");
+      const tbody = document.getElementById("qualityIssuesBody");
+      cards.innerHTML = "";
+      tbody.innerHTML = "";
+
+      if (!qr || !qr.results) {
+        cards.innerHTML = '<p style="color: var(--text-muted); grid-column: 1/-1;">Kalite kontrolü testing aşamasında otomatik koşturulacaktır.</p>';
+        tbody.innerHTML = '<tr><td colspan="4" style="color: var(--text-muted);">Bulgu yok.</td></tr>';
+        return;
+      }
+
+      let allIssues = [];
+      qr.results.forEach(r => {
+        const qCard = document.createElement("div");
+        qCard.className = "q-card";
+        const badgeClass = r.status === "pass" ? "q-pass" : (r.status === "warn" ? "q-warn" : (r.status === "fail" ? "q-fail" : "q-skip"));
+        qCard.innerHTML = `
+          <div class="q-card-header">
+            <span class="q-tool">${r.tool}</span>
+            <span class="q-badge ${badgeClass}">${r.status.toUpperCase()}</span>
+          </div>
+          <div class="q-summary">${r.summary || 'Tamamlandı'}</div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">Süre: ${r.duration_sec}s</div>
+        `;
+        cards.appendChild(qCard);
+
+        if (r.issues) {
+          r.issues.forEach(i => allIssues.push({ tool: r.tool, ...i }));
+        }
+      });
+
+      if (allIssues.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="color: #34d399;">Hiçbir hata veya uyarı tespit edilmedi (Tüm kontroller başarılı).</td></tr>';
+      } else {
+        allIssues.forEach(i => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td><code>${i.tool}</code></td>
+            <td>${i.file ? `${escapeHtml(i.file)}:${i.line || ''}` : '-'}</td>
+            <td><span class="q-badge ${i.severity === 'high' || i.severity === 'critical' ? 'q-fail' : 'q-warn'}">${i.severity}</span></td>
+            <td>${escapeHtml(i.message)}</td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
+    }
+
+    async function loadFiles(id) {
+      try {
+        const res = await fetch(`/pipelines/${id}/workspace/files`);
+        workspaceFiles = await res.json();
+        document.getElementById("filesCount").innerText = workspaceFiles.length;
+
+        const sel = document.getElementById("fileSelector");
+        sel.innerHTML = '<option value="">Dosya seçin...</option>';
+        workspaceFiles.forEach(f => {
+          const opt = document.createElement("option");
+          opt.value = f.path;
+          opt.innerText = `${f.path} (${f.size} B)`;
+          sel.appendChild(opt);
+        });
+
+        if (workspaceFiles.length > 0) {
+          sel.value = workspaceFiles[0].path;
+          loadFileContent(workspaceFiles[0].path);
+        } else {
+          document.getElementById("fileContentBox").innerText = "// Henüz üretilmiş dosya bulunamadı (Coding aşaması tamamlandığında buraya yazılır).";
+        }
+      } catch (err) {
+        console.error("Dosyalar yüklenemedi:", err);
+      }
+    }
+
+    function loadFileContent(path) {
+      const file = workspaceFiles.find(f => f.path === path);
+      const box = document.getElementById("fileContentBox");
+      if (file) {
+        box.innerText = file.content;
+      } else {
+        box.innerText = "// Dosya seçin.";
+      }
+    }
+
+    async function loadMessages(id) {
+      const res = await fetch(`/pipelines/${id}/messages`);
+      const msgs = await res.json();
+      const container = document.getElementById("messagesList");
+      container.innerHTML = "";
+
+      if (!msgs || msgs.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-muted);">Mesaj yok.</p>';
+        return;
+      }
+
+      msgs.forEach(m => {
+        const div = document.createElement("div");
+        div.style.cssText = "padding: 12px; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px solid var(--card-border); font-size: 13px;";
+        div.innerHTML = `
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+            <strong style="color: #60a5fa;">${m.from_agent} ➔ ${m.to_agent}</strong>
+            <span style="font-size: 11px; color: var(--text-muted);">${m.message_type} (${m.severity})</span>
+          </div>
+          <div>${escapeHtml(m.content)}</div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function initSettingsTable() {
+      const tbody = document.getElementById("stageConfigBody");
+      tbody.innerHTML = "";
+
+      STAGES.forEach(stg => {
+        const row = document.createElement("tr");
+        let optionsHtml = "";
+        MODEL_OPTIONS.forEach(grp => {
+          optionsHtml += `<optgroup label="${grp.group}">`;
+          grp.options.forEach(opt => {
+            optionsHtml += `<option value="${opt}">${opt}</option>`;
+          });
+          optionsHtml += `</optgroup>`;
+        });
+
+        row.innerHTML = `
+          <td><strong>${stg}</strong></td>
+          <td>
+            <select class="select" id="model-${stg}" style="width: 220px;">
+              ${optionsHtml}
+            </select>
+          </td>
+          <td><input type="checkbox" id="approval-${stg}" checked> Onay Beklesin</td>
+          <td><span style="color: #34d399;">Aktif</span></td>
+          <td><button class="btn btn-outline" style="padding: 4px 10px;" onclick="saveStageConfig('${stg}')">Kaydet</button></td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      // Varsayılan modelleri ayarla
+      document.getElementById("model-research").value = "claude-sonnet-5";
+      document.getElementById("model-planning").value = "claude-opus-5";
+      document.getElementById("model-coding").value = "deepseek-coder";
+      document.getElementById("model-testing").value = "claude-haiku-4-5-20251001";
+      document.getElementById("model-marketing").value = "claude-sonnet-5";
+    }
+
+    async function saveStageConfig(stage) {
+      const model = document.getElementById(`model-${stage}`).value;
+      const requires_approval = document.getElementById(`approval-${stage}`).checked;
+
+      const res = await fetch("/stage-config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stage: stage,
+          requires_approval: requires_approval,
+          max_revision_rounds: 3,
+          model: model,
+          enabled: true
+        }),
+      });
+      if (res.ok) {
+        alert(`${stage} ayarları kaydedildi (Model: ${model}).`);
+      }
+    }
+
+    // Modal Operations
+    function openNewModal() { document.getElementById("newModal").classList.add("open"); }
+    function closeNewModal() { document.getElementById("newModal").classList.remove("open"); }
+    function openRevisionModal() { document.getElementById("revisionModal").classList.add("open"); }
+    function closeRevisionModal() { document.getElementById("revisionModal").classList.remove("open"); }
+
+    async function openAnswerModal() {
+      const res = await fetch(`/pipelines/${activePipelineId}/messages`);
+      const msgs = await res.json();
+      const q = msgs.reverse().find(m => m.message_type === "question" && m.status === "pending");
+      if (q) {
+        document.getElementById("questionContent").innerText = `${q.from_agent}: "${q.content}"`;
+        document.getElementById("answerMessageId").value = q.id;
+        document.getElementById("answerModal").classList.add("open");
+      }
+    }
+    function closeAnswerModal() { document.getElementById("answerModal").classList.remove("open"); }
+
+    async function startPipeline() {
+      const text = document.getElementById("newIdeaInput").value.trim();
+      if (!text) return alert("Lütfen bir fikir girin.");
+      closeNewModal();
+      document.getElementById("newIdeaInput").value = "";
+
+      const res = await fetch("/pipelines", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idea_text: text }),
+      });
+      const p = await res.json();
+      activePipelineId = p.id;
+      await loadPipelines();
+      await refreshCurrentPipeline();
+    }
+
+    async function approveStage() {
+      if (!activePipelineId) return;
+      const res = await fetch(`/pipelines/${activePipelineId}/approve`, { method: "POST" });
+      if (res.ok) {
+        await refreshCurrentPipeline();
+        await loadPipelines();
+      } else {
+        const err = await res.json();
+        alert(err.detail || "Onaylama başarısız oldu.");
+      }
+    }
+
+    async function sendAnswer() {
+      const msgId = document.getElementById("answerMessageId").value;
+      const answer = document.getElementById("answerInput").value.trim();
+      if (!answer) return;
+      closeAnswerModal();
+
+      await fetch(`/pipelines/${activePipelineId}/messages/${msgId}/answer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answer: answer }),
+      });
+      document.getElementById("answerInput").value = "";
+      await refreshCurrentPipeline();
+    }
+
+    async function sendRevision() {
+      const text = document.getElementById("revisionContent").value.trim();
+      if (!text) return;
+      closeRevisionModal();
+
+      await fetch(`/pipelines/${activePipelineId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from_agent: "user",
+          to_agent: `${currentPipeline.current_stage}_agent`,
+          message_type: "correction_request",
+          severity: "blocking",
+          content: text,
+          stage_reference: currentPipeline.current_stage,
+        }),
+      });
+
+      await fetch(`/pipelines/${activePipelineId}/rerun`, { method: "POST" });
+      document.getElementById("revisionContent").value = "";
+      await refreshCurrentPipeline();
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-pane").forEach(p => p.classList.remove("active"));
+      event.target.classList.add("active");
+      document.getElementById(`tab-${tabId}`).classList.add("active");
+    }
+
+    function selectStageTab(stage) {
+      switchTab('reports');
+    }
+
+    function getStatusColor(st) {
+      switch (st) {
+        case 'running': return '#60a5fa';
+        case 'waiting_approval': return '#fbbf24';
+        case 'waiting_response': return '#a78bfa';
+        case 'completed': return '#34d399';
+        case 'escalated': return '#f87171';
+        default: return '#9ca3af';
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>

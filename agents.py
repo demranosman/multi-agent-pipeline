@@ -1,70 +1,19 @@
 """
-Her fonksiyon bir "ajanı" temsil eder. Şu an stub (sahte) çıktı
-döndürüyorlar - gerçek kullanımda her biri Anthropic API'ye
-(gerekirse web_search tool'uyla) bir çağrı yapıp yapılandırılmış
-JSON döndürmeli.
+Her fonksiyon bir "ajanı" temsil eder. Çoklu LLM sağlayıcıları (Anthropic, DeepSeek,
+OpenAI, Google Gemini) ve yerel test motoru (quality_checker) ile çalışırlar.
 
 Her ajan fonksiyonunun imzası aynı:
     def agent(context: dict, revision_note: str | None, model: str) -> dict
 
-- context: önceki aşamalardan gelen birikmiş bilgi (idea_text,
-  research_report, plan, code_summary ...)
-- revision_note: eğer bu bir revizyon turuysa, düzeltilmesi istenen
-  şeyin metni (AgentMessage.content) - stub'larda kullanılmıyor ama
-  gerçek implementasyonda prompt'a eklenmeli.
-- model: orchestrator'ın stage_configs tablosundan (ya da DEFAULT_MODELS
-  varsayılanından) çözdüğü model string'i, örn. "claude-opus-5".
-  Gerçek implementasyonda Anthropic API çağrısındaki `model` parametresine
-  doğrudan geçirilmeli - böylece hangi ajanın hangi modeli kullanacağı
-  kod değiştirmeden, stage_configs üzerinden ayarlanabilir.
-
 Dönüş değeri: {"summary": str, "full_output": dict, "question": str (opsiyonel)}
-summary -> PipelineLog.summary, full_output -> PipelineLog.full_output
-
-"question" alanı doldurulursa (örn. "Ödeme için Stripe mi iyzico mu?"),
-orchestrator bunu otomatik olarak "user"a yönelik blocking bir
-AgentMessage'a çevirir ve pipeline'ı waiting_response durumuna alır.
-Kullanıcı /messages/{id}/answer ile cevapladığında aynı ajan, cevabı
-revision_note olarak alıp kaldığı yerden devam eder.
 """
-from typing import Optional
+from typing import Optional, Any
 import json
 import os
 
-import anthropic
-
-_client: Optional[anthropic.Anthropic] = None
-
-
-def _get_client() -> anthropic.Anthropic:
-    """
-    Client'ı lazily oluşturuyoruz ki ANTHROPIC_API_KEY set edilmeden
-    modül import edildiğinde (ör. testlerde) hata vermesin.
-
-    ANTHROPIC_WORKSPACE_ID opsiyoneldir: sadece kullandığın API anahtarı
-    belirli bir workspace'e bağlı DEĞİLSE gerekir (bu durumda Anthropic
-    API'si "anthropic-workspace-id header gerekli" hatası döner). Normal
-    şartlarda console.anthropic.com'da bir workspace içinde oluşturulan
-    anahtarlar için bu değişkene gerek yoktur.
-    """
-    global _client
-    if _client is None:
-        default_headers = {}
-        workspace_id = os.environ.get("ANTHROPIC_WORKSPACE_ID")
-        if workspace_id:
-            default_headers["anthropic-workspace-id"] = workspace_id
-        _client = anthropic.Anthropic(
-            api_key=os.environ["ANTHROPIC_API_KEY"],
-            default_headers=default_headers or None,
-        )
-    return _client
-
-
-def _extract_text(response) -> str:
-    """response.content, web_search kullanıldığında metin dışı bloklar da
-    içerebilir (server_tool_use, web_search_tool_result) - sadece text
-    bloklarını birleştiriyoruz."""
-    return "".join(block.text for block in response.content if block.type == "text")
+from llm_gateway import call_llm
+from workspace import get_workspace_path
+from quality_checker.runner import run_pipeline
 
 
 def _parse_json_output(raw_text: str) -> dict:
@@ -75,32 +24,6 @@ def _parse_json_output(raw_text: str) -> dict:
         cleaned = cleaned.split("```")[1]
         cleaned = cleaned.removeprefix("json").strip()
     return json.loads(cleaned)
-
-
-RESEARCH_SYSTEM_PROMPT = """\
-Sen bir pazar araştırması ajanısın. Sana bir ürün/hizmet fikri verilecek.
-Görevin: web araması yaparak bu fikrin uygulanabilirliğini değerlendirmek.
-
-Değerlendirirken şunlara bak:
-- Benzer/rakip ürünler var mı, varsa kaç tane ve ne kadar olgunlar
-- Bu ihtiyaca gerçekten pazar talebi var mı (arama hacmi, forum/topluluk
-  tartışmaları, mevcut ürünlerin şikayetleri gibi sinyaller)
-- Teknik/operasyonel zorluk derecesi
-- Hedef müşteri kim, ne kadar büyük bir kitle
-
-Cevabını SADECE aşağıdaki JSON şemasında ver, başka hiçbir metin ekleme
-(markdown code fence de kullanma, düz JSON döndür):
-
-{
-  "feasibility_score": <1-10 arası tam sayı>,
-  "market_need": "<düşük|orta|orta-yüksek|yüksek>",
-  "difficulty": "<düşük|orta|yüksek>",
-  "target_customer": "<kısa hedef kitle tanımı>",
-  "competitors": ["<rakip adı ve kısa not>", ...],
-  "key_risks": ["<risk>", ...],
-  "reasoning": "<2-3 cümlelik gerekçe>"
-}
-"""
 
 
 def _append_revision_note(prompt: str, revision_note: Optional[str]) -> str:
@@ -122,28 +45,23 @@ def _call_structured_agent(
     max_tokens: int = 4096,
 ) -> dict:
     """
-    Ortak akış: API'yi çağır -> metni çıkar -> JSON'a ayrıştır -> özet üret.
-    JSON parse edilemezse pipeline'ı kırmadan ham metni full_output'a koyar,
-    böylece kullanıcı /logs üzerinden görüp manuel müdahale edebilir.
-
-    summarize: parsed dict alıp özet string'i döndüren fonksiyon.
+    Ortak akış: LLM Gateway'i çağır -> JSON'a ayrıştır -> özet üret.
     """
-    client = _get_client()
-    kwargs = dict(
-        model=model,
-        max_tokens=max_tokens,
-        system=system_prompt,
-        messages=[{"role": "user", "content": user_prompt}],
-    )
-    if tools:
-        kwargs["tools"] = tools
+    try:
+        raw_text, stop_reason = call_llm(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            model=model,
+            max_tokens=max_tokens,
+            tools=tools,
+        )
+    except Exception as e:
+        return {
+            "summary": f"{fallback_summary} çağrısı başarısız oldu: {str(e)}",
+            "full_output": {"error": str(e), "model": model},
+        }
 
-    response = client.messages.create(**kwargs)
-    raw_text = _extract_text(response)
-
-    if response.stop_reason == "max_tokens":
-        # Format sorunu değil, kapasite sorunu - ayırt etmek önemli çünkü
-        # çözümü farklı (max_tokens'ı artırmak ya da promptu kısaltmak).
+    if stop_reason == "max_tokens":
         return {
             "summary": (
                 f"{fallback_summary} ancak yanıt max_tokens={max_tokens} limitine "
@@ -164,6 +82,30 @@ def _call_structured_agent(
     return {"summary": summarize(parsed), "full_output": parsed}
 
 
+RESEARCH_SYSTEM_PROMPT = """\
+Sen bir pazar araştırması ajanısın. Sana bir ürün/hizmet fikri verilecek.
+Görevin: pazar verilerini analiz ederek bu fikrin uygulanabilirliğini değerlendirmek.
+
+Değerlendirirken şunlara bak:
+- Benzer/rakip ürünler var mı, varsa kaç tane ve ne kadar olgunlar
+- Bu ihtiyaca gerçekten pazar talebi var mı
+- Teknik/operasyonel zorluk derecesi
+- Hedef müşteri kim, ne kadar büyük bir kitle
+
+Cevabını SADECE aşağıdaki JSON şemasında ver, başka hiçbir metin ekleme:
+
+{
+  "feasibility_score": <1-10 arası tam sayı>,
+  "market_need": "<düşük|orta|orta-yüksek|yüksek>",
+  "difficulty": "<düşük|orta|yüksek>",
+  "target_customer": "<kısa hedef kitle tanımı>",
+  "competitors": ["<rakip adı ve kısa not>", ...],
+  "key_risks": ["<risk>", ...],
+  "reasoning": "<2-3 cümlelik gerekçe>"
+}
+"""
+
+
 def research_agent(context: dict, revision_note: Optional[str] = None,
                     model: str = "claude-sonnet-5") -> dict:
     prompt = _append_revision_note(
@@ -178,24 +120,29 @@ def research_agent(context: dict, revision_note: Optional[str] = None,
             f"{competitor_count} rakip tespit edildi."
         )
 
+    # Web search sadece Anthropic'te ve model destekliyorsa verilir
+    tools = [{"type": "web_search_20250305", "name": "web_search"}] if "claude" in model.lower() else None
+
     return _call_structured_agent(
         RESEARCH_SYSTEM_PROMPT, prompt, model,
         fallback_summary="Araştırma tamamlandı",
         summarize=summarize,
-        tools=[{"type": "web_search_20250305", "name": "web_search"}],
+        tools=tools,
     )
 
 
 PLANNING_SYSTEM_PROMPT = """\
-Sen bir teknik mimar/planlama ajanısın. Sana bir ürün fikri ve o fikrin
+Sen bir teknik mimar ve ürün planlama ajanısın. Sana bir ürün fikri ve o fikrin
 pazar araştırması raporu verilecek. Görevin bu fikri hayata geçirmek için
-somut bir teknik plan çıkarmak.
+somut bir teknik ve mimari plan çıkarmak.
 
-Listeleri (milestones, risks, key_integrations) en fazla 8 madde ile sınırla,
-her maddeyi tek cümlede tut - yanıtın kesilmemesi için özlü ol.
+Listeleri en fazla 8 madde ile sınırla, her maddeyi tek cümlede tut.
 
 Cevabını SADECE aşağıdaki JSON şemasında ver, başka metin ekleme:
-  "architecture_notes": "<kısa mimari açıklama - servisler, veri akışı>",
+
+{
+  "stack": ["<teknoloji/dil/kütüphane>", ...],
+  "architecture_notes": "<mimari açıklama - servisler, veri akışı>",
   "milestones": ["<aşama>", ...],
   "key_integrations": ["<gerekli 3. parti servis/API>", ...],
   "estimated_weeks": <tam sayı>,
@@ -230,25 +177,27 @@ def planning_agent(context: dict, revision_note: Optional[str] = None,
 
 
 CODING_SYSTEM_PROMPT = """\
-Sen bir kodlama ajanısın. Sana bir teknik plan verilecek. Görevin bu planın
-ilk aşaması için somut, çalışır durumda kod üretmek.
+Sen uzman bir kodlama ajanısın. Sana bir teknik plan verilecek. Görevin bu planın
+ilk aşaması için somut, temiz ve çalışır durumda kod dosyaları üretmek.
+Üretilen kodlar projenin çalışma alanına fiziksel olarak yazılacaktır.
+Ayrıca bu kodlar için temel bir test dosyası (test_*.py) da üretmeyi unutma.
 
 Cevabını SADECE aşağıdaki JSON şemasında ver, başka metin ekleme:
 
 {
   "files": [
-    {"path": "<dosya yolu>", "content": "<dosyanın tam içeriği>"},
+    {"path": "<dosya yolu, ör. main.py veya tests/test_main.py>", "content": "<dosyanın tam içeriği>"},
     ...
   ],
   "diff_summary": "<ne değişti/eklendi, kısa özet>",
-  "open_questions": ["<koddan bağımsız, netleştirilmesi gereken nokta>", ...],
+  "open_questions": ["<koddan bağımsız nokta>", ...],
   "reasoning": "<2-3 cümlelik gerekçe>"
 }
 """
 
 
 def coding_agent(context: dict, revision_note: Optional[str] = None,
-                  model: str = "claude-sonnet-5") -> dict:
+                  model: str = "deepseek-coder") -> dict:
     plan = context.get("planning_report", {})
     prompt = _append_revision_note(
         f"Fikir:\n{context['idea_text']}\n\n"
@@ -261,29 +210,25 @@ def coding_agent(context: dict, revision_note: Optional[str] = None,
         note = f" (revizyon: {revision_note})" if revision_note else ""
         return f"{len(files)} dosya üretildi{note}."
 
-    result = _call_structured_agent(
+    return _call_structured_agent(
         CODING_SYSTEM_PROMPT, prompt, model,
         fallback_summary="Kodlama tamamlandı",
         summarize=summarize,
         max_tokens=8000,
     )
-    # NOT: Bu implementasyon kodu sadece ÜRETİR, gerçek bir repo'ya yazmaz
-    # ya da çalıştırmaz. Üretimde full_output["files"] içeriğini bir
-    # sandbox/container'a yazıp (ör. Docker + git) orada test_agent'ın
-    # gerçekten çalıştırabileceği bir ortam kurman gerekir.
-    return result
 
 
 TESTING_SYSTEM_PROMPT = """\
-Sen bir test ajanısın. Sana üretilmiş kod dosyaları verilecek. Görevin bu
-kodu statik olarak incelemek, olası hataları/eksikleri tespit etmek ve
-bu kod için test senaryoları üretmek.
+Sen bir test ve kalite güvence (QA) ajanısın. Sana üretilen kod dosyaları ve
+bu kodlar üzerinde gerçekten çalıştırılmış deterministik statik analiz / test motoru
+(Ruff, Mypy, Bandit, Vulture, Pytest) raporu verilecek.
 
-Not: Kodu gerçekten ÇALIŞTIRMIYORSUN, sadece okuyarak analiz ediyorsun.
-Bu yüzden "passed/failed" gibi kesin sayılar üretme - bunun yerine
-tespit ettiğin somut sorunları ve önerdiğin testleri raporla.
+Görevin:
+1. Otomatik test motorunun bulgularını (lint, güvenlik, test başarısızlığı vb.) analiz etmek.
+2. Kodun mantıksal doğruluğunu incelemek.
+3. Varsa engelleyici (blocking) sorunları listelemek ve recommended_action'ı "approve" veya "request_changes" olarak belirlemek.
 
-Cevabını SADECE aşağıdaki JSON şemasında ver, başka metin ekleme:
+Cevabını SADECE aşağıdaki JSON şemasında ver:
 
 {
   "findings": [
@@ -302,37 +247,68 @@ Cevabını SADECE aşağıdaki JSON şemasında ver, başka metin ekleme:
 
 def testing_agent(context: dict, revision_note: Optional[str] = None,
                    model: str = "claude-haiku-4-5-20251001") -> dict:
-    code = context.get("coding_report", {})
+    code_report = context.get("coding_report", {})
+    pipeline_id = context.get("pipeline_id")
+
+    # 1. Gerçek kalite denetim motorunu (quality_checker) çalıştır
+    quality_report_dict = None
+    if pipeline_id:
+        try:
+            workspace_path = get_workspace_path(pipeline_id)
+            if workspace_path.exists():
+                qp_result = run_pipeline(workspace_path)
+                quality_report_dict = qp_result.to_dict()
+        except Exception as exc:
+            quality_report_dict = {"error": f"Kalite denetimi motor hatası: {str(exc)}"}
+
+    # 2. LLM için girdi hazırla
+    quality_summary_text = json.dumps(quality_report_dict, ensure_ascii=False, indent=2) if quality_report_dict else "Kalite denetim raporu bulunamadı."
     prompt = _append_revision_note(
-        f"İncelenecek kod:\n{json.dumps(code, ensure_ascii=False, indent=2)}",
+        f"İncelenecek kod raporu:\n{json.dumps(code_report, ensure_ascii=False, indent=2)}\n\n"
+        f"Gerçek Kalite ve Test Motoru Sonuçları:\n{quality_summary_text}",
         revision_note,
     )
 
     def summarize(parsed: dict) -> str:
         findings = parsed.get("findings", [])
         blocking = sum(1 for f in findings if f.get("severity") == "blocking")
+        qp_status = (quality_report_dict or {}).get("overall_status", "N/A").upper()
         return (
-            f"Statik inceleme tamamlandı: {len(findings)} bulgu "
-            f"({blocking} engelleyici), {len(parsed.get('generated_tests', []))} test üretildi."
+            f"Kalite Denetimi: {qp_status} | Statik İnceleme: {len(findings)} bulgu "
+            f"({blocking} engelleyici), Karar: {parsed.get('recommended_action', 'approve')}."
         )
 
     result = _call_structured_agent(
         TESTING_SYSTEM_PROMPT, prompt, model,
-        fallback_summary="Test/inceleme tamamlandı",
+        fallback_summary="Test ve kalite denetimi tamamlandı",
         summarize=summarize,
         max_tokens=6000,
     )
-    # NOT: Gerçek "test çalıştırma" (pytest vb.) için full_output["generated_tests"]
-    # içeriğini coding_agent'ın ürettiği dosyalarla birlikte bir sandbox'a
-    # yazıp gerçekten çalıştırman, sonucu ayrı bir adımda buraya eklemen gerekir.
+
+    # Kalite motorunun ham sonucunu da full_output'a ekle
+    if isinstance(result.get("full_output"), dict):
+        result["full_output"]["quality_report"] = quality_report_dict
+
+        # Eğer kalite motoru FAIL verdiyse otomatik blocking finding ekle
+        if quality_report_dict and quality_report_dict.get("overall_status") == "fail":
+            existing_findings = result["full_output"].get("findings", [])
+            has_blocking = any(f.get("severity") == "blocking" for f in existing_findings)
+            if not has_blocking:
+                existing_findings.append({
+                    "severity": "blocking",
+                    "description": "Kalite kontrol motoru kritik hatalar tespit etti (Fail). Düzeltme gereklidir.",
+                    "file": "quality_checker",
+                })
+                result["full_output"]["findings"] = existing_findings
+                result["full_output"]["recommended_action"] = "request_changes"
+
     return result
 
 
 MARKETING_SYSTEM_PROMPT = """\
-Sen bir pazarlama strateji ajanısın. Sana bir ürün fikri ve o fikrin pazar
-araştırması raporu (hedef kitle, rakipler) verilecek. Görevin bu ürün için
-bir konumlandırma ve başlangıç pazarlama stratejisi üretmek. Gerekirse
-güncel trendleri/kanalları kontrol etmek için web araması yapabilirsin.
+Sen bir pazarlama strateji ve Go-to-Market (GTM) ajanısın. Sana bir ürün fikri ve
+o fikrin pazar araştırması raporu verilecek. Görevin bu ürün için güçlü bir konumlandırma,
+hedef kitle mesajı, lansman kanalları ve kampanya fikirleri üretmek.
 
 Cevabını SADECE aşağıdaki JSON şemasında ver, başka metin ekleme:
 
@@ -352,8 +328,7 @@ def marketing_agent(context: dict, revision_note: Optional[str] = None,
     research = context.get("research_report", {})
     prompt = _append_revision_note(
         f"Fikir:\n{context['idea_text']}\n\n"
-        f"Pazar araştırması raporu (hedef kitle/rakipler dahil):\n"
-        f"{json.dumps(research, ensure_ascii=False, indent=2)}",
+        f"Pazar araştırması raporu:\n{json.dumps(research, ensure_ascii=False, indent=2)}",
         revision_note,
     )
 
@@ -364,11 +339,13 @@ def marketing_agent(context: dict, revision_note: Optional[str] = None,
             f"{len(parsed.get('campaign_ideas', []))} kampanya fikri."
         )
 
+    tools = [{"type": "web_search_20250305", "name": "web_search"}] if "claude" in model.lower() else None
+
     return _call_structured_agent(
         MARKETING_SYSTEM_PROMPT, prompt, model,
         fallback_summary="Pazarlama stratejisi tamamlandı",
         summarize=summarize,
-        tools=[{"type": "web_search_20250305", "name": "web_search"}],
+        tools=tools,
     )
 
 

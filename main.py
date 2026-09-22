@@ -1,8 +1,9 @@
 from dotenv import load_dotenv
 load_dotenv()  # .env dosyasını yükler - database/agents'taki os.environ okumalarından ÖNCE çalışmalı
 
+from pathlib import Path
 from fastapi import FastAPI, Depends, HTTPException
-from fastapi.responses import Response
+from fastapi.responses import Response, FileResponse
 from sqlalchemy.orm import Session
 
 from database import Base, engine, get_db
@@ -13,10 +14,35 @@ from schemas import (
 )
 import orchestrator
 from reporting import render_markdown
+import workspace
+from llm_gateway import PROVIDER_CATALOG
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Fikirden Pazarlamaya Ajan Hattı")
+app = FastAPI(title="Fikirden Pazarlamaya Ajan Hattı & Dashboard")
+
+STATIC_INDEX = Path(__file__).parent / "static" / "index.html"
+
+
+@app.get("/")
+@app.get("/dashboard")
+def get_dashboard():
+    """Web Dashboard arayüzünü sunar."""
+    if STATIC_INDEX.exists():
+        return FileResponse(STATIC_INDEX)
+    return {"message": "Dashboard index.html bulunamadı, static dizinini kontrol edin."}
+
+
+@app.get("/models/catalog")
+def get_models_catalog():
+    """Desteklenen model ve sağlayıcı kataloğunu döndürür."""
+    return PROVIDER_CATALOG
+
+
+@app.get("/pipelines", response_model=list[PipelineOut])
+def list_pipelines(db: Session = Depends(get_db)):
+    """Tüm pipeline'ları en yeniden en eskiye listeler."""
+    return db.query(Pipeline).order_by(Pipeline.created_at.desc()).all()
 
 
 @app.post("/pipelines", response_model=PipelineOut)
@@ -36,6 +62,15 @@ def get_pipeline(pipeline_id: str, db: Session = Depends(get_db)):
     if not pipeline:
         raise HTTPException(404, "Pipeline bulunamadı")
     return pipeline
+
+
+@app.get("/pipelines/{pipeline_id}/workspace/files")
+def get_workspace_files(pipeline_id: str, db: Session = Depends(get_db)):
+    """Çalışma alanında (workspaces/<id>/) üretilmiş dosyaları listeler."""
+    pipeline = db.get(Pipeline, pipeline_id)
+    if not pipeline:
+        raise HTTPException(404, "Pipeline bulunamadı")
+    return workspace.read_workspace_files(pipeline_id)
 
 
 @app.get("/pipelines/{pipeline_id}/logs", response_model=list[LogOut])
@@ -83,12 +118,7 @@ def approve(pipeline_id: str, db: Session = Depends(get_db)):
 
 @app.post("/pipelines/{pipeline_id}/messages", response_model=MessageOut)
 def send_message(pipeline_id: str, payload: MessageCreate, db: Session = Depends(get_db)):
-    """
-    Bir ajandan (veya kullanıcıdan) başka bir ajana düzeltme/öneri gönder.
-    Not: bu sadece mesajı kaydeder. Hedeflenen aşamayı gerçekten tekrar
-    çalıştırmak için /rerun endpoint'ini çağırman gerekir (otomatik akışta
-    bu, o aşama tekrar tetiklendiğinde zaten kontrol edilir).
-    """
+    """Bir ajandan (veya kullanıcıdan) başka bir ajana düzeltme/öneri gönder."""
     pipeline = db.get(Pipeline, pipeline_id)
     if not pipeline:
         raise HTTPException(404, "Pipeline bulunamadı")
@@ -110,11 +140,7 @@ def list_messages(pipeline_id: str, db: Session = Depends(get_db)):
 def answer_question(
     pipeline_id: str, message_id: str, payload: AnswerCreate, db: Session = Depends(get_db)
 ):
-    """
-    Bir ajanın (status=waiting_response iken) sorduğu soruyu cevapla.
-    Cevap otomatik olarak ilgili aşamanın revizyon akışına girer ve
-    aşama kaldığı yerden devam eder.
-    """
+    """Bir ajanın sorduğu soruyu cevapla."""
     pipeline = db.get(Pipeline, pipeline_id)
     if not pipeline:
         raise HTTPException(404, "Pipeline bulunamadı")
