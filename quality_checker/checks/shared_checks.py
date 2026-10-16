@@ -11,7 +11,7 @@ from quality_checker.models import CheckResult, Issue, Status
 @timed
 def run_jscpd_duplicate_code(project_path: Path) -> CheckResult:
     """jscpd hem Python hem JS/TS dahil pek çok dilde kopya-yapıştır kod tespiti yapar."""
-    if not tool_available("npx"):
+    if not tool_available("npx", project_path):
         return CheckResult(
             check_id="duplicate_code", tool="jscpd", status=Status.SKIPPED,
             duration_sec=0.0, summary="npx bulunamadı (kopya kod kontrolü atlandı).",
@@ -25,7 +25,7 @@ def run_jscpd_duplicate_code(project_path: Path) -> CheckResult:
         "--silent",
         "--ignore", jscpd_ignore_glob(),
     ]
-    code, out, err = run_command(cmd, project_path, timeout=300)
+    _, out, err = run_command(cmd, project_path, timeout=300)
 
     issues: list[Issue] = []
     report_file = report_dir / "jscpd-report.json"

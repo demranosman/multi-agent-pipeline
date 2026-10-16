@@ -16,10 +16,11 @@ Kullanıcılar süreci hem **modern Web Dashboard** üzerinden hem de **FastAPI 
    - Üretilen kodlar için dosya seçici ve yerleşik **Kod Görüntüleyici**.
    - Detaylı **Kod Kalitesi & Test Kartları** (Ruff, Mypy, Bandit, Pytest durumları ve bulgular tablosu).
 2. **Çoklu LLM Desteği (`llm_gateway.py`)**:
-   - **Anthropic Claude**: `claude-sonnet-5`, `claude-opus-5`, `claude-haiku`, `claude-3-7-sonnet`
-   - **DeepSeek**: `deepseek-coder`, `deepseek-chat`, `deepseek-v3`, `deepseek-v4` (özellikle güçlü ve uygun maliyetli kodlama için)
-   - **Google Gemini**: `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-2.0-flash`
-   - **OpenAI**: `gpt-4o`, `gpt-4o-mini`, `o3-mini`, `o1`
+   - **Anthropic Claude**: `claude-fable-5-1`, `claude-opus-5-5`, `claude-sonnet-5-5`, `claude-haiku-4-5-20251001`
+   - **DeepSeek**: `deepseek-v4-pro`, `deepseek-flash` (güçlü ve uygun maliyetli kodlama/akıl yürütme)
+   - **Google Gemini**: `gemini-3.8-flash`, `gemini-3.1-pro-preview`, `gemini-3.7-flash`, `gemini-3.5-flash-lite`
+   - **OpenAI**: `gpt-6-astra`, `gpt-6.1-sol`, `gpt-6-luna`
+   - **Otomatik Fallback**: Birincil model kredi/limit/ağ hatası verirse, API anahtarı tanımlı diğer sağlayıcıların en üst modeli otomatik denenir. `LLM_FALLBACK_MODELS=model1,model2` ile elle ayarlanır.
    - Aşama bazında model seçimi yapılabilir (`/stage-config`).
 3. **Fiziksel Çalışma Alanı (`workspace.py`)**:
    - `coding_agent` tarafından üretilen dosyalar `workspaces/<pipeline_id>/` dizinine fiziksel olarak kaydedilir.
@@ -109,11 +110,11 @@ pytest tests/ -v
 
 | Aşama | Varsayılan Model | Alternatif Seçenekler | Gerekçe |
 |---|---|---|---|
-| **research** | `claude-sonnet-5` | `gemini-2.5-flash`, `gpt-4o` | Web arama + sentezleme yeteneği |
-| **planning** | `claude-opus-5` | `o3-mini`, `gemini-2.5-pro` | Güçlü mimari akıl yürütme |
-| **coding** | `deepseek-coder` | `claude-sonnet-5`, `deepseek-v4` | Hızlı, ekonomik ve yetenekli kodlama |
-| **testing** | `claude-haiku-4-5-20251001` | `gpt-4o-mini` | Statik + dinamik sonuçları özetleme |
-| **marketing** | `claude-sonnet-5` | `gpt-4o`, `gemini-2.5-flash` | Yaratıcı konumlandırma ve strateji |
+| **research** | `claude-sonnet-5-5` | `gemini-3.8-flash`, `gpt-6-luna` | Web arama + sentezleme yeteneği |
+| **planning** | `claude-opus-5-5` | `gpt-6.1-sol`, `gemini-3.1-pro-preview` | Güçlü mimari akıl yürütme |
+| **coding** | `deepseek-v4-pro` | `claude-sonnet-5-5`, `deepseek-flash` | Hızlı, ekonomik ve yetenekli kodlama |
+| **testing** | `claude-haiku-4-5-20251001` | `gpt-6-luna` | Statik + dinamik sonuçları özetleme |
+| **marketing** | `claude-sonnet-5-5` | `gpt-6-astra`, `gemini-3.8-flash` | Yaratıcı konumlandırma ve strateji |
 
 ---
 

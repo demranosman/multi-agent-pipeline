@@ -9,6 +9,7 @@ eskalasyon, soru-cevap) doğru çalıştığını doğrulamak.
     pytest tests/ -v
 """
 import orchestrator
+import workspace
 
 
 def _mock_agent(name):
@@ -53,6 +54,20 @@ def test_happy_path_completes_all_stages(client, monkeypatch):
     logs = client.get(f"/pipelines/{pid}/logs").json()
     assert len(logs) == 5
     assert {l["stage"] for l in logs} == {"research", "planning", "coding", "testing", "marketing"}
+
+
+def test_log_records_actual_fallback_model(client, monkeypatch):
+    """Ajan fallback modelini bildirirse, log istenen değil gerçek modeli göstermeli."""
+    def _agent(context, revision_note=None, model=None):
+        return {"summary": "ok", "full_output": {}, "model_used": "gpt-6-astra"}
+
+    monkeypatch.setattr(orchestrator, "AGENT_MAP", {**MOCK_AGENT_MAP, "research": _agent})
+
+    pid = client.post("/pipelines", json={"idea_text": "Fallback testi"}).json()["id"]
+
+    logs = client.get(f"/pipelines/{pid}/logs").json()
+    research_log = next(l for l in logs if l["stage"] == "research")
+    assert research_log["model"] == "gpt-6-astra"
 
 
 def test_blocking_correction_triggers_revision(client, monkeypatch):
@@ -152,3 +167,105 @@ def test_question_and_answer_flow(client, monkeypatch):
     planning_logs = [l for l in logs if l["stage"] == "planning"]
     assert len(planning_logs) == 2
     assert planning_logs[-1]["full_output"]["payment_provider"] == "iyzico"
+
+
+# --- Faz kapıları: contract / scope / placeholder ---------------------------
+
+def _agent_returning(full_output):
+    def _agent(context, revision_note=None, model=None):
+        return {"summary": "ok", "full_output": full_output}
+    return _agent
+
+
+def test_coding_placeholder_blocks_and_writes_nothing(client, monkeypatch, tmp_path):
+    monkeypatch.setattr(workspace, "WORKSPACE_BASE_DIR", tmp_path)
+    monkeypatch.setattr(orchestrator, "AGENT_MAP", {
+        **MOCK_AGENT_MAP,
+        "planning": _agent_returning({"scope_patterns": ["app.py"]}),
+        "coding": _agent_returning({"files": [{"path": "app.py", "content": "# TODO: bitir"}]}),
+    })
+
+    pid = client.post("/pipelines", json={"idea_text": "placeholder"}).json()["id"]
+    client.post(f"/pipelines/{pid}/approve")                 # research -> planning
+    body = client.post(f"/pipelines/{pid}/approve").json()   # planning -> coding (kapı)
+
+    assert body["status"] == "escalated"
+    assert body["current_stage"] == "coding"
+    messages = client.get(f"/pipelines/{pid}/messages").json()
+    assert any(m["from_agent"] == "gate" and "TODO" in m["content"] for m in messages)
+    assert client.get(f"/pipelines/{pid}/workspace/files").json() == []
+
+
+def test_coding_out_of_scope_blocks(client, monkeypatch, tmp_path):
+    monkeypatch.setattr(workspace, "WORKSPACE_BASE_DIR", tmp_path)
+    monkeypatch.setattr(orchestrator, "AGENT_MAP", {
+        **MOCK_AGENT_MAP,
+        "planning": _agent_returning({"scope_patterns": ["app.py"]}),
+        "coding": _agent_returning({"files": [{"path": "evil.py", "content": "x = 1"}]}),
+    })
+
+    pid = client.post("/pipelines", json={"idea_text": "scope"}).json()["id"]
+    client.post(f"/pipelines/{pid}/approve")
+    body = client.post(f"/pipelines/{pid}/approve").json()
+
+    assert body["status"] == "escalated"
+    messages = client.get(f"/pipelines/{pid}/messages").json()
+    assert any("kapsam dışı" in m["content"] for m in messages)
+    assert client.get(f"/pipelines/{pid}/workspace/files").json() == []
+
+
+def test_coding_gate_pass_writes_files(client, monkeypatch, tmp_path):
+    """Kapılar temizse dosyalar yazılır ve akış eskisi gibi ilerler."""
+    monkeypatch.setattr(workspace, "WORKSPACE_BASE_DIR", tmp_path)
+    monkeypatch.setattr(orchestrator, "AGENT_MAP", {
+        **MOCK_AGENT_MAP,
+        "planning": _agent_returning({"scope_patterns": ["app/*"]}),
+        "coding": _agent_returning({"files": [{"path": "app/main.py", "content": "x = 1"}]}),
+    })
+
+    pid = client.post("/pipelines", json={"idea_text": "temiz"}).json()["id"]
+    client.post(f"/pipelines/{pid}/approve")
+    body = client.post(f"/pipelines/{pid}/approve").json()
+
+    assert body["status"] == "waiting_approval"
+    assert body["current_stage"] == "coding"
+    files = client.get(f"/pipelines/{pid}/workspace/files").json()
+    assert [f["path"] for f in files] == ["app/main.py"]
+
+
+def test_contract_snapshot_and_stale_detection():
+    """Onaylanan aşamanın çıktısı sonradan değişirse contract ihlali üretilmeli."""
+    from database import SessionLocal
+    from models import Pipeline, PipelineLog, StageName
+    from orchestrator import _contract_violations, _snapshot_contract
+
+    db = SessionLocal()
+    try:
+        pipeline = Pipeline(idea_text="contract")
+        pipeline.current_stage = StageName.planning
+        db.add(pipeline)
+        db.commit()
+        db.refresh(pipeline)
+
+        db.add(PipelineLog(
+            pipeline_id=pipeline.id, stage=StageName.research, agent="research_agent",
+            summary="ilk", full_output={"v": 1}, revision_round=0,
+        ))
+        db.commit()
+
+        _snapshot_contract(db, pipeline, StageName.research)
+        db.commit()
+        assert _contract_violations(db, pipeline) == []
+
+        # Onaylı aşama yeniden çalışmış gibi yeni bir log ekle -> hash değişir.
+        db.add(PipelineLog(
+            pipeline_id=pipeline.id, stage=StageName.research, agent="research_agent",
+            summary="yeni", full_output={"v": 2}, revision_round=1,
+        ))
+        db.commit()
+
+        violations = _contract_violations(db, pipeline)
+        assert violations
+        assert "research" in violations[0]
+    finally:
+        db.close()

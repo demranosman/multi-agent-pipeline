@@ -1,0 +1,23 @@
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+# B008: Do not perform function call Depends in argument defaults (FastAPI standard pattern)
+# UP045: Allow Optional[X] alongside X | None
+# BLE001: Blind exception catch in pipeline error recovery
+ignore = ["B008", "BLE001"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+warn_unused_ignores = false
+disallow_untyped_defs = false
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv", "workspaces", ".jscpd-report"]
+skips = ["B101", "B105", "B404", "B603"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]

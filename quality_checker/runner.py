@@ -1,8 +1,8 @@
 """Tespit edilen proje tipine göre doğru kontrolleri, doğru sırada çalıştırır."""
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 from quality_checker.checks import node_checks as nc
 from quality_checker.checks import python_checks as pc
@@ -45,6 +45,7 @@ def run_pipeline(project_path: str | Path, include_slow: bool = False) -> Pipeli
     )
 
     steps: list[Callable[[Path], CheckResult]] = []
+    _ = include_slow  # İleride mutmut / stryker gibi yavaş kontroller için rezerve edildi
     if "python" in project_types or project_types == ["unknown"]:
         steps.extend(PYTHON_STEPS)
     if "node" in project_types:

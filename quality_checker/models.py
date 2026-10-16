@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import json
 import time
-from dataclasses import dataclass, field, asdict
-from datetime import datetime
+from dataclasses import asdict, dataclass, field
+from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -86,9 +86,9 @@ class PipelineReport:
             Status.PASS: "✅ Geçti", Status.WARN: "⚠️ Uyarı", Status.FAIL: "❌ Başarısız",
             Status.ERROR: "🛑 Hata", Status.SKIPPED: "⏭️ Atlandı",
         }
-        started = datetime.fromtimestamp(self.started_at).strftime("%Y-%m-%d %H:%M:%S")
+        started = datetime.fromtimestamp(self.started_at, tz=UTC).strftime("%Y-%m-%d %H:%M:%S")
         finished = (
-            datetime.fromtimestamp(self.finished_at).strftime("%Y-%m-%d %H:%M:%S")
+            datetime.fromtimestamp(self.finished_at, tz=UTC).strftime("%Y-%m-%d %H:%M:%S")
             if self.finished_at else "-"
         )
 

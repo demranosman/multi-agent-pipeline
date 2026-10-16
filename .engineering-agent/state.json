@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "task": "",
+  "phase": "IDLE",
+  "status": "DRAFT",
+  "plan_hash": null,
+  "audit_hash": "ec12b5c8376e035f134047b964c6dd8e27a91b1633eef57ebde5a10834c35c8b",
+  "architecture_hash": null,
+  "contract_hash": null,
+  "baseline": {
+    "captured_at": null,
+    "git_available": false,
+    "git_head": null,
+    "changed_files": []
+  },
+  "last_gate": null,
+  "repair_prompts": 0,
+  "updated_at": "2026-10-05T07:09:12.266Z"
+}

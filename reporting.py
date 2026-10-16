@@ -7,7 +7,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from schemas import PipelineOut, LogOut
+from schemas import LogOut, PipelineOut
 
 STAGE_TITLES = {
     "research": "🔍 Araştırma",

@@ -1,0 +1,597 @@
+{
+  "project_path": "C:\\Users\\fikret\\Desktop\\multi-agent-pipeline",
+  "project_types": [
+    "python"
+  ],
+  "started_at": 1791184111.416791,
+  "finished_at": 1791184152.2504551,
+  "overall_status": "warn",
+  "results": [
+    {
+      "check_id": "lint",
+      "tool": "ruff",
+      "status": "warn",
+      "duration_sec": 0.53,
+      "summary": "15 lint bulgusu",
+      "issue_count": 15,
+      "issues": [
+        {
+          "file": "C:\\Users\\fikret\\Desktop\\multi-agent-pipeline\\quality_checker\\checks\\node_checks.py",
+          "line": 40,
+          "severity": "medium",
+          "message": "Unpacked variable `code` is never used",
+          "rule": "RUF059"
+        },
+        {
+          "file": "C:\\Users\\fikret\\Desktop\\multi-agent-pipeline\\quality_checker\\checks\\node_checks.py",
+          "line": 77,
+          "severity": "medium",
+          "message": "Unpacked variable `code` is never used",
+          "rule": "RUF059"
+        },
+        {
+          "file": "C:\\Users\\fikret\\Desktop\\multi-agent-pipeline\\quality_checker\\checks\\node_checks.py",
+          "line": 103,
+          "severity": "medium",
+          "message": "Unpacked variable `code` is never used",
+          "rule": "RUF059"
+        },
+        {
+          "file": "C:\\Users\\fikret\\Desktop\\multi-agent-pipeline\\quality_checker\\checks\\node_checks.py",
+          "line": 128,
+          "severity": "medium",
+          "message": "Unpacked variable `code` is never used",
+          "rule": "RUF059"
+        },
+        {
+          "file": "C:\\Users\\fikret\\Desktop\\multi-agent-pipeline\\quality_checker\\checks\\node_checks.py",
+          "line": 155,
+          "severity": "medium",
+          "message": "Unpacked variable `code` is never used",
+          "rule": "RUF059"
+        },
+        {
+          "file": "C:\\Users\\fikret\\Desktop\\multi-agent-pipeline\\quality_checker\\checks\\python_checks.py",
+          "line": 26,
+          "severity": "medium",
+          "message": "Unpacked variable `code` is never used",
+          "rule": "RUF059"
+        },
+        {
+          "file": "C:\\Users\\fikret\\Desktop\\multi-agent-pipeline\\quality_checker\\checks\\python_checks.py",
+          "line": 56,
+          "severity": "medium",
+          "message": "Unpacked variable `code` is never used",
+          "rule": "RUF059"
+        },
+        {
+          "file": "C:\\Users\\fikret\\Desktop\\multi-agent-pipeline\\quality_checker\\checks\\python_checks.py",
+          "line": 82,
+          "severity": "medium",
+          "message": "Unpacked variable `code` is never used",
+          "rule": "RUF059"
+        },
+        {
+          "file": "C:\\Users\\fikret\\Desktop\\multi-agent-pipeline\\quality_checker\\checks\\python_checks.py",
+          "line": 122,
+          "severity": "medium",
+          "message": "Unpacked variable `code` is never used",
+          "rule": "RUF059"
+        },
+        {
+          "file": "C:\\Users\\fikret\\Desktop\\multi-agent-pipeline\\quality_checker\\checks\\python_checks.py",
+          "line": 153,
+          "severity": "medium",
+          "message": "Unpacked variable `code` is never used",
+          "rule": "RUF059"
+        },
+        {
+          "file": "C:\\Users\\fikret\\Desktop\\multi-agent-pipeline\\quality_checker\\checks\\python_checks.py",
+          "line": 193,
+          "severity": "medium",
+          "message": "Call `startswith` once with a `tuple`",
+          "rule": "PIE810"
+        },
+        {
+          "file": "C:\\Users\\fikret\\Desktop\\multi-agent-pipeline\\quality_checker\\checks\\python_checks.py",
+          "line": 208,
+          "severity": "medium",
+          "message": "`try`-`except`-`pass` detected, consider logging the exception",
+          "rule": "S110"
+        },
+        {
+          "file": "C:\\Users\\fikret\\Desktop\\multi-agent-pipeline\\quality_checker\\checks\\shared_checks.py",
+          "line": 28,
+          "severity": "medium",
+          "message": "Unpacked variable `code` is never used",
+          "rule": "RUF059"
+        },
+        {
+          "file": "C:\\Users\\fikret\\Desktop\\multi-agent-pipeline\\quality_checker\\models.py",
+          "line": 89,
+          "severity": "medium",
+          "message": "Use `datetime.UTC` alias",
+          "rule": "UP017"
+        },
+        {
+          "file": "C:\\Users\\fikret\\Desktop\\multi-agent-pipeline\\quality_checker\\models.py",
+          "line": 91,
+          "severity": "medium",
+          "message": "Use `datetime.UTC` alias",
+          "rule": "UP017"
+        }
+      ],
+      "raw_output": "able\"\n  },\n  {\n    \"cell\": null,\n    \"code\": \"RUF059\",\n    \"end_location\": {\n      \"column\": 9,\n      \"row\": 56\n    },\n    \"filename\": \"C:\\\\Users\\\\fikret\\\\Desktop\\\\multi-agent-pipeline\\\\quality_checker\\\\checks\\\\python_checks.py\",\n    \"fix\": {\n      \"applicability\": \"unsafe\",\n      \"edits\": [\n        {\n          \"content\": \"_code\",\n          \"end_location\": {\n            \"column\": 9,\n            \"row\": 56\n          },\n          \"location\": {\n            \"column\": 5,\n            \"row\": 56\n          }\n        }\n      ],\n      \"message\": \"Prefix it with an underscore or any other dummy variable pattern\"\n    },\n    \"location\": {\n      \"column\": 5,\n      \"row\": 56\n    },\n    \"message\": \"Unpacked variable `code` is never used\",\n    \"name\": \"unused-unpacked-variable\",\n    \"noqa_row\": 56,\n    \"severity\": \"error\",\n    \"url\": \"https://docs.astral.sh/ruff/rules/unused-unpacked-variable\"\n  },\n  {\n    \"cell\": null,\n    \"code\": \"RUF059\",\n    \"end_location\": {\n      \"column\": 9,\n      \"row\": 82\n    },\n    \"filename\": \"C:\\\\Users\\\\fikret\\\\Desktop\\\\multi-agent-pipeline\\\\quality_checker\\\\checks\\\\python_checks.py\",\n    \"fix\": {\n      \"applicability\": \"unsafe\",\n      \"edits\": [\n        {\n          \"content\": \"_code\",\n          \"end_location\": {\n            \"column\": 9,\n            \"row\": 82\n          },\n          \"location\": {\n            \"column\": 5,\n            \"row\": 82\n          }\n        }\n      ],\n      \"message\": \"Prefix it with an underscore or any other dummy variable pattern\"\n    },\n    \"location\": {\n      \"column\": 5,\n      \"row\": 82\n    },\n    \"message\": \"Unpacked variable `code` is never used\",\n    \"name\": \"unused-unpacked-variable\",\n    \"noqa_row\": 82,\n    \"severity\": \"error\",\n    \"url\": \"https://docs.astral.sh/ruff/rules/unused-unpacked-variable\"\n  },\n  {\n    \"cell\": null,\n    \"code\": \"RUF059\",\n    \"end_location\": {\n      \"column\": 9,\n      \"row\": 122\n    },\n    \"filename\": \"C:\\\\Users\\\\fikret\\\\Desktop\\\\multi-agent-pipeline\\\\quality_checker\\\\checks\\\\python_checks.py\",\n    \"fix\": {\n      \"applicability\": \"unsafe\",\n      \"edits\": [\n        {\n          \"content\": \"_code\",\n          \"end_location\": {\n            \"column\": 9,\n            \"row\": 122\n          },\n          \"location\": {\n            \"column\": 5,\n            \"row\": 122\n          }\n        }\n      ],\n      \"message\": \"Prefix it with an underscore or any other dummy variable pattern\"\n    },\n    \"location\": {\n      \"column\": 5,\n      \"row\": 122\n    },\n    \"message\": \"Unpacked variable `code` is never used\",\n    \"name\": \"unused-unpacked-variable\",\n    \"noqa_row\": 122,\n    \"severity\": \"error\",\n    \"url\": \"https://docs.astral.sh/ruff/rules/unused-unpacked-variable\"\n  },\n  {\n    \"cell\": null,\n    \"code\": \"RUF059\",\n    \"end_location\": {\n      \"column\": 9,\n      \"row\": 153\n    },\n    \"filename\": \"C:\\\\Users\\\\fikret\\\\Desktop\\\\multi-agent-pipeline\\\\quality_checker\\\\checks\\\\python_checks.py\",\n    \"fix\": {\n      \"applicability\": \"unsafe\",\n      \"edits\": [\n        {\n          \"content\": \"_code\",\n          \"end_location\": {\n            \"column\": 9,\n            \"row\": 153\n          },\n          \"location\": {\n            \"column\": 5,\n            \"row\": 153\n          }\n        }\n      ],\n      \"message\": \"Prefix it with an underscore or any other dummy variable pattern\"\n    },\n    \"location\": {\n      \"column\": 5,\n      \"row\": 153\n    },\n    \"message\": \"Unpacked variable `code` is never used\",\n    \"name\": \"unused-unpacked-variable\",\n    \"noqa_row\": 153,\n    \"severity\": \"error\",\n    \"url\": \"https://docs.astral.sh/ruff/rules/unused-unpacked-variable\"\n  },\n  {\n    \"cell\": null,\n    \"code\": \"PIE810\",\n    \"end_location\": {\n      \"column\": 69,\n      \"row\": 193\n    },\n    \"filename\": \"C:\\\\Users\\\\fikret\\\\Desktop\\\\multi-agent-pipeline\\\\quality_checker\\\\checks\\\\python_checks.py\",\n    \"fix\": {\n      \"applicability\": \"unsafe\",\n      \"edits\": [\n        {\n          \"content\": \"line.startswith((\\\"FAILED\\\", \\\"ERROR\\\"))\",\n          \"end_location\": {\n            \"column\": 69,\n            \"row\": 193\n          },\n          \"location\": {\n            \"column\": 16,\n            \"row\": 193\n          }\n        }\n      ],\n      \"message\": \"Merge into a single `startswith` call\"\n    },\n    \"location\": {\n      \"column\": 16,\n      \"row\": 193\n    },\n    \"message\": \"Call `startswith` once with a `tuple`\",\n    \"name\": \"multiple-starts-ends-with\",\n    \"noqa_row\": 193,\n    \"severity\": \"error\",\n    \"url\": \"https://docs.astral.sh/ruff/rules/multiple-starts-ends-with\"\n  },\n  {\n    \"cell\": null,\n    \"code\": \"S110\",\n    \"end_location\": {\n      \"column\": 17,\n      \"row\": 209\n    },\n    \"filename\": \"C:\\\\Users\\\\fikret\\\\Desktop\\\\multi-agent-pipeline\\\\quality_checker\\\\checks\\\\python_checks.py\",\n    \"fix\": null,\n    \"location\": {\n      \"column\": 9,\n      \"row\": 208\n    },\n    \"message\": \"`try`-`except`-`pass` detected, consider logging the exception\",\n    \"name\": \"try-except-pass\",\n    \"noqa_row\": 208,\n    \"severity\": \"error\",\n    \"url\": \"https://docs.astral.sh/ruff/rules/try-except-pass\"\n  },\n  {\n    \"cell\": null,\n    \"code\": \"RUF059\",\n    \"end_location\": {\n      \"column\": 9,\n      \"row\": 28\n    },\n    \"filename\": \"C:\\\\Users\\\\fikret\\\\Desktop\\\\multi-agent-pipeline\\\\quality_checker\\\\checks\\\\shared_checks.py\",\n    \"fix\": {\n      \"applicability\": \"unsafe\",\n      \"edits\": [\n        {\n          \"content\": \"_code\",\n          \"end_location\": {\n            \"column\": 9,\n            \"row\": 28\n          },\n          \"location\": {\n            \"column\": 5,\n            \"row\": 28\n          }\n        }\n      ],\n      \"message\": \"Prefix it with an underscore or any other dummy variable pattern\"\n    },\n    \"location\": {\n      \"column\": 5,\n      \"row\": 28\n    },\n    \"message\": \"Unpacked variable `code` is never used\",\n    \"name\": \"unused-unpacked-variable\",\n    \"noqa_row\": 28,\n    \"severity\": \"error\",\n    \"url\": \"https://docs.astral.sh/ruff/rules/unused-unpacked-variable\"\n  },\n  {\n    \"cell\": null,\n    \"code\": \"UP017\",\n    \"end_location\": {\n      \"column\": 74,\n      \"row\": 89\n    },\n    \"filename\": \"C:\\\\Users\\\\fikret\\\\Desktop\\\\multi-agent-pipeline\\\\quality_checker\\\\models.py\",\n    \"fix\": {\n      \"applicability\": \"safe\",\n      \"edits\": [\n        {\n          \"content\": \"from datetime import datetime, timezone, UTC\",\n          \"end_location\": {\n            \"column\": 40,\n            \"row\": 7\n          },\n          \"location\": {\n            \"column\": 1,\n            \"row\": 7\n          }\n        },\n        {\n          \"content\": \"UTC\",\n          \"end_location\": {\n            \"column\": 74,\n            \"row\": 89\n          },\n          \"location\": {\n            \"column\": 62,\n            \"row\": 89\n          }\n        }\n      ],\n      \"message\": \"Convert to `datetime.UTC` alias\"\n    },\n    \"location\": {\n      \"column\": 62,\n      \"row\": 89\n    },\n    \"message\": \"Use `datetime.UTC` alias\",\n    \"name\": \"datetime-timezone-utc\",\n    \"noqa_row\": 89,\n    \"severity\": \"error\",\n    \"url\": \"https://docs.astral.sh/ruff/rules/datetime-timezone-utc\"\n  },\n  {\n    \"cell\": null,\n    \"code\": \"UP017\",\n    \"end_location\": {\n      \"column\": 69,\n      \"row\": 91\n    },\n    \"filename\": \"C:\\\\Users\\\\fikret\\\\Desktop\\\\multi-agent-pipeline\\\\quality_checker\\\\models.py\",\n    \"fix\": {\n      \"applicability\": \"safe\",\n      \"edits\": [\n        {\n          \"content\": \"from datetime import datetime, timezone, UTC\",\n          \"end_location\": {\n            \"column\": 40,\n            \"row\": 7\n          },\n          \"location\": {\n            \"column\": 1,\n            \"row\": 7\n          }\n        },\n        {\n          \"content\": \"UTC\",\n          \"end_location\": {\n            \"column\": 69,\n            \"row\": 91\n          },\n          \"location\": {\n            \"column\": 57,\n            \"row\": 91\n          }\n        }\n      ],\n      \"message\": \"Convert to `datetime.UTC` alias\"\n    },\n    \"location\": {\n      \"column\": 57,\n      \"row\": 91\n    },\n    \"message\": \"Use `datetime.UTC` alias\",\n    \"name\": \"datetime-timezone-utc\",\n    \"noqa_row\": 91,\n    \"severity\": \"error\",\n    \"url\": \"https://docs.astral.sh/ruff/rules/datetime-timezone-utc\"\n  }\n]",
+      "command": "ruff check . --output-format json",
+      "error": null
+    },
+    {
+      "check_id": "type_check",
+      "tool": "mypy",
+      "status": "pass",
+      "duration_sec": 3.71,
+      "summary": "0 tip hatası",
+      "issue_count": 0,
+      "issues": [],
+      "raw_output": "C:\\Users\\fikret\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\__init__.pyi:737: error: Type statement is only supported in Python 3.12 and greater  [syntax]\n",
+      "command": "mypy . --no-error-summary --no-color-output --exclude (^|/)(.venv|venv|env|.env|node_modules|.git|dist|build|__pycache__|.mypy_cache|.pytest_cache|.ruff_cache|site-packages)/",
+      "error": null
+    },
+    {
+      "check_id": "security",
+      "tool": "bandit",
+      "status": "warn",
+      "duration_sec": 0.94,
+      "summary": "56 güvenlik bulgusu (0 yüksek riskli)",
+      "issue_count": 56,
+      "issues": [
+        {
+          "file": ".\\quality_checker\\checks\\base.py",
+          "line": 7,
+          "severity": "low",
+          "message": "Consider possible security implications associated with the subprocess module.",
+          "rule": "B404"
+        },
+        {
+          "file": ".\\quality_checker\\checks\\base.py",
+          "line": 42,
+          "severity": "low",
+          "message": "subprocess call - check for execution of untrusted input.",
+          "rule": "B603"
+        },
+        {
+          "file": ".\\quality_checker\\checks\\python_checks.py",
+          "line": 208,
+          "severity": "low",
+          "message": "Try, Except, Pass detected.",
+          "rule": "B110"
+        },
+        {
+          "file": ".\\quality_checker\\models.py",
+          "line": 14,
+          "severity": "low",
+          "message": "Possible hardcoded password: 'pass'",
+          "rule": "B105"
+        },
+        {
+          "file": ".\\tests\\test_pipeline.py",
+          "line": 36,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_pipeline.py",
+          "line": 39,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_pipeline.py",
+          "line": 40,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_pipeline.py",
+          "line": 44,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_pipeline.py",
+          "line": 46,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_pipeline.py",
+          "line": 47,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_pipeline.py",
+          "line": 50,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_pipeline.py",
+          "line": 51,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_pipeline.py",
+          "line": 54,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_pipeline.py",
+          "line": 55,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_pipeline.py",
+          "line": 72,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_pipeline.py",
+          "line": 76,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_pipeline.py",
+          "line": 78,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_pipeline.py",
+          "line": 79,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_pipeline.py",
+          "line": 83,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_pipeline.py",
+          "line": 84,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_pipeline.py",
+          "line": 88,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_pipeline.py",
+          "line": 89,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_pipeline.py",
+          "line": 110,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_pipeline.py",
+          "line": 113,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_pipeline.py",
+          "line": 114,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_pipeline.py",
+          "line": 136,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_pipeline.py",
+          "line": 140,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_pipeline.py",
+          "line": 146,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_pipeline.py",
+          "line": 148,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_pipeline.py",
+          "line": 149,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_pipeline.py",
+          "line": 153,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_pipeline.py",
+          "line": 154,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_quality_and_workspace.py",
+          "line": 15,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_quality_and_workspace.py",
+          "line": 16,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_quality_and_workspace.py",
+          "line": 17,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_quality_and_workspace.py",
+          "line": 18,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_quality_and_workspace.py",
+          "line": 19,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_quality_and_workspace.py",
+          "line": 20,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_quality_and_workspace.py",
+          "line": 33,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_quality_and_workspace.py",
+          "line": 34,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_quality_and_workspace.py",
+          "line": 35,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_quality_and_workspace.py",
+          "line": 38,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_quality_and_workspace.py",
+          "line": 40,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_quality_and_workspace.py",
+          "line": 41,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_quality_and_workspace.py",
+          "line": 44,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_quality_and_workspace.py",
+          "line": 62,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_quality_and_workspace.py",
+          "line": 63,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_quality_and_workspace.py",
+          "line": 65,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_quality_and_workspace.py",
+          "line": 80,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_quality_and_workspace.py",
+          "line": 84,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_quality_and_workspace.py",
+          "line": 86,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_quality_and_workspace.py",
+          "line": 87,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_quality_and_workspace.py",
+          "line": 91,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_quality_and_workspace.py",
+          "line": 99,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_quality_and_workspace.py",
+          "line": 101,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        },
+        {
+          "file": ".\\tests\\test_quality_and_workspace.py",
+          "line": 102,
+          "severity": "low",
+          "message": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+          "rule": "B101"
+        }
+      ],
+      "raw_output": "e.\",\n      \"line_number\": 62,\n      \"line_range\": [\n        62\n      ],\n      \"more_info\": \"https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html\",\n      \"test_id\": \"B101\",\n      \"test_name\": \"assert_used\"\n    },\n    {\n      \"code\": \"62     assert isinstance(report, PipelineReport)\\n63     assert \\\"python\\\" in report.project_types\\n64     # Temiz kod \\u00fczerinde ruff, mypy, bandit, vulture ge\\u00e7er\\n\",\n      \"col_offset\": 4,\n      \"end_col_offset\": 43,\n      \"filename\": \".\\\\tests\\\\test_quality_and_workspace.py\",\n      \"issue_confidence\": \"HIGH\",\n      \"issue_cwe\": {\n        \"id\": 703,\n        \"link\": \"https://cwe.mitre.org/data/definitions/703.html\"\n      },\n      \"issue_severity\": \"LOW\",\n      \"issue_text\": \"Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.\",\n      \"line_number\": 63,\n      \"line_range\": [\n        63\n      ],\n      \"more_info\": \"https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html\",\n      \"test_id\": \"B101\",\n      \"test_name\": \"assert_used\"\n    },\n    {\n      \"code\": \"64     # Temiz kod \\u00fczerinde ruff, mypy, bandit, vulture ge\\u00e7er\\n65     assert report.overall_status in (Status.PASS, Status.WARN)\\n66 \\n\",\n      \"col_offset\": 4,\n      \"end_col_offset\": 62,\n      \"filename\": \".\\\\tests\\\\test_quality_and_workspace.py\",\n      \"issue_confidence\": \"HIGH\",\n      \"issue_cwe\": {\n        \"id\": 703,\n        \"link\": \"https://cwe.mitre.org/data/definitions/703.html\"\n      },\n      \"issue_severity\": \"LOW\",\n      \"issue_text\": \"Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.\",\n      \"line_number\": 65,\n      \"line_range\": [\n        65\n      ],\n      \"more_info\": \"https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html\",\n      \"test_id\": \"B101\",\n      \"test_name\": \"assert_used\"\n    },\n    {\n      \"code\": \"79     resp = client.get(\\\"/\\\")\\n80     assert resp.status_code == 200\\n81 \\n\",\n      \"col_offset\": 4,\n      \"end_col_offset\": 34,\n      \"filename\": \".\\\\tests\\\\test_quality_and_workspace.py\",\n      \"issue_confidence\": \"HIGH\",\n      \"issue_cwe\": {\n        \"id\": 703,\n        \"link\": \"https://cwe.mitre.org/data/definitions/703.html\"\n      },\n      \"issue_severity\": \"LOW\",\n      \"issue_text\": \"Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.\",\n      \"line_number\": 80,\n      \"line_range\": [\n        80\n      ],\n      \"more_info\": \"https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html\",\n      \"test_id\": \"B101\",\n      \"test_name\": \"assert_used\"\n    },\n    {\n      \"code\": \"83     resp = client.get(\\\"/models/catalog\\\")\\n84     assert resp.status_code == 200\\n85     data = resp.json()\\n\",\n      \"col_offset\": 4,\n      \"end_col_offset\": 34,\n      \"filename\": \".\\\\tests\\\\test_quality_and_workspace.py\",\n      \"issue_confidence\": \"HIGH\",\n      \"issue_cwe\": {\n        \"id\": 703,\n        \"link\": \"https://cwe.mitre.org/data/definitions/703.html\"\n      },\n      \"issue_severity\": \"LOW\",\n      \"issue_text\": \"Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.\",\n      \"line_number\": 84,\n      \"line_range\": [\n        84\n      ],\n      \"more_info\": \"https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html\",\n      \"test_id\": \"B101\",\n      \"test_name\": \"assert_used\"\n    },\n    {\n      \"code\": \"85     data = resp.json()\\n86     assert \\\"deepseek\\\" in data\\n87     assert \\\"gemini\\\" in data\\n\",\n      \"col_offset\": 4,\n      \"end_col_offset\": 29,\n      \"filename\": \".\\\\tests\\\\test_quality_and_workspace.py\",\n      \"issue_confidence\": \"HIGH\",\n      \"issue_cwe\": {\n        \"id\": 703,\n        \"link\": \"https://cwe.mitre.org/data/definitions/703.html\"\n      },\n      \"issue_severity\": \"LOW\",\n      \"issue_text\": \"Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.\",\n      \"line_number\": 86,\n      \"line_range\": [\n        86\n      ],\n      \"more_info\": \"https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html\",\n      \"test_id\": \"B101\",\n      \"test_name\": \"assert_used\"\n    },\n    {\n      \"code\": \"86     assert \\\"deepseek\\\" in data\\n87     assert \\\"gemini\\\" in data\\n88 \\n\",\n      \"col_offset\": 4,\n      \"end_col_offset\": 27,\n      \"filename\": \".\\\\tests\\\\test_quality_and_workspace.py\",\n      \"issue_confidence\": \"HIGH\",\n      \"issue_cwe\": {\n        \"id\": 703,\n        \"link\": \"https://cwe.mitre.org/data/definitions/703.html\"\n      },\n      \"issue_severity\": \"LOW\",\n      \"issue_text\": \"Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.\",\n      \"line_number\": 87,\n      \"line_range\": [\n        87\n      ],\n      \"more_info\": \"https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html\",\n      \"test_id\": \"B101\",\n      \"test_name\": \"assert_used\"\n    },\n    {\n      \"code\": \"90     pipe_resp = client.post(\\\"/pipelines\\\", json={\\\"idea_text\\\": \\\"Dosya testi\\\"})\\n91     assert pipe_resp.status_code == 200\\n92     pid = pipe_resp.json()[\\\"id\\\"]\\n\",\n      \"col_offset\": 4,\n      \"end_col_offset\": 39,\n      \"filename\": \".\\\\tests\\\\test_quality_and_workspace.py\",\n      \"issue_confidence\": \"HIGH\",\n      \"issue_cwe\": {\n        \"id\": 703,\n        \"link\": \"https://cwe.mitre.org/data/definitions/703.html\"\n      },\n      \"issue_severity\": \"LOW\",\n      \"issue_text\": \"Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.\",\n      \"line_number\": 91,\n      \"line_range\": [\n        91\n      ],\n      \"more_info\": \"https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html\",\n      \"test_id\": \"B101\",\n      \"test_name\": \"assert_used\"\n    },\n    {\n      \"code\": \"98     resp = client.get(f\\\"/pipelines/{pid}/workspace/files\\\")\\n99     assert resp.status_code == 200\\n100     files = resp.json()\\n\",\n      \"col_offset\": 4,\n      \"end_col_offset\": 34,\n      \"filename\": \".\\\\tests\\\\test_quality_and_workspace.py\",\n      \"issue_confidence\": \"HIGH\",\n      \"issue_cwe\": {\n        \"id\": 703,\n        \"link\": \"https://cwe.mitre.org/data/definitions/703.html\"\n      },\n      \"issue_severity\": \"LOW\",\n      \"issue_text\": \"Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.\",\n      \"line_number\": 99,\n      \"line_range\": [\n        99\n      ],\n      \"more_info\": \"https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html\",\n      \"test_id\": \"B101\",\n      \"test_name\": \"assert_used\"\n    },\n    {\n      \"code\": \"100     files = resp.json()\\n101     assert len(files) == 1\\n102     assert files[0][\\\"path\\\"] == \\\"app.py\\\"\\n\",\n      \"col_offset\": 4,\n      \"end_col_offset\": 26,\n      \"filename\": \".\\\\tests\\\\test_quality_and_workspace.py\",\n      \"issue_confidence\": \"HIGH\",\n      \"issue_cwe\": {\n        \"id\": 703,\n        \"link\": \"https://cwe.mitre.org/data/definitions/703.html\"\n      },\n      \"issue_severity\": \"LOW\",\n      \"issue_text\": \"Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.\",\n      \"line_number\": 101,\n      \"line_range\": [\n        101\n      ],\n      \"more_info\": \"https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html\",\n      \"test_id\": \"B101\",\n      \"test_name\": \"assert_used\"\n    },\n    {\n      \"code\": \"101     assert len(files) == 1\\n102     assert files[0][\\\"path\\\"] == \\\"app.py\\\"\\n\",\n      \"col_offset\": 4,\n      \"end_col_offset\": 39,\n      \"filename\": \".\\\\tests\\\\test_quality_and_workspace.py\",\n      \"issue_confidence\": \"HIGH\",\n      \"issue_cwe\": {\n        \"id\": 703,\n        \"link\": \"https://cwe.mitre.org/data/definitions/703.html\"\n      },\n      \"issue_severity\": \"LOW\",\n      \"issue_text\": \"Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.\",\n      \"line_number\": 102,\n      \"line_range\": [\n        102\n      ],\n      \"more_info\": \"https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html\",\n      \"test_id\": \"B101\",\n      \"test_name\": \"assert_used\"\n    }\n  ]\n}",
+      "command": "bandit -r . -f json -q -x ./.venv,./venv,./env,./.env,./node_modules,./.git,./dist,./build,./__pycache__,./.mypy_cache,./.pytest_cache,./.ruff_cache,./site-packages",
+      "error": null
+    },
+    {
+      "check_id": "dependency_audit",
+      "tool": "pip-audit",
+      "status": "pass",
+      "duration_sec": 33.25,
+      "summary": "0 bilinen zafiyetli bağımlılık",
+      "issue_count": 0,
+      "issues": [],
+      "raw_output": "{\"dependencies\": [{\"name\": \"fastapi\", \"version\": \"0.142.2\", \"vulns\": []}, {\"name\": \"uvicorn\", \"version\": \"0.54.0\", \"vulns\": []}, {\"name\": \"sqlalchemy\", \"version\": \"2.1.3\", \"vulns\": []}, {\"name\": \"anthropic\", \"version\": \"1.11.0\", \"vulns\": []}, {\"name\": \"pydantic\", \"version\": \"2.13.5\", \"vulns\": []}, {\"name\": \"pydantic-core\", \"version\": \"2.46.5\", \"vulns\": []}, {\"name\": \"anyio\", \"version\": \"4.15.1\", \"vulns\": []}, {\"name\": \"docstring-parser\", \"version\": \"0.18.0\", \"vulns\": []}, {\"name\": \"httpx2\", \"version\": \"2.13.1\", \"vulns\": []}, {\"name\": \"httpcore2\", \"version\": \"2.13.1\", \"vulns\": []}, {\"name\": \"jiter\", \"version\": \"0.17.0\", \"vulns\": []}, {\"name\": \"sniffio\", \"version\": \"1.3.1\", \"vulns\": []}, {\"name\": \"typing-extensions\", \"version\": \"4.16.0\", \"vulns\": []}, {\"name\": \"openai\", \"version\": \"3.24.0\", \"vulns\": []}, {\"name\": \"httpx\", \"version\": \"0.28.1\", \"vulns\": []}, {\"name\": \"httpcore\", \"version\": \"1.0.9\", \"vulns\": []}, {\"name\": \"python-dotenv\", \"version\": \"1.2.4\", \"vulns\": []}, {\"name\": \"ruff\", \"version\": \"0.16.10\", \"vulns\": []}, {\"name\": \"mypy\", \"version\": \"2.4.0\", \"vulns\": []}, {\"name\": \"ast-serialize\", \"version\": \"0.12.1\", \"vulns\": []}, {\"name\": \"bandit\", \"version\": \"1.9.4\", \"vulns\": []}, {\"name\": \"vulture\", \"version\": \"2.16\", \"vulns\": []}, {\"name\": \"annotated-doc\", \"version\": \"0.0.5\", \"vulns\": []}, {\"name\": \"annotated-types\", \"version\": \"0.8.0\", \"vulns\": []}, {\"name\": \"click\", \"version\": \"8.5.0\", \"vulns\": []}, {\"name\": \"colorama\", \"version\": \"0.4.6\", \"vulns\": []}, {\"name\": \"h11\", \"version\": \"0.16.0\", \"vulns\": []}, {\"name\": \"idna\", \"version\": \"3.20\", \"vulns\": []}, {\"name\": \"librt\", \"version\": \"0.16.0\", \"vulns\": []}, {\"name\": \"mypy-extensions\", \"version\": \"1.1.0\", \"vulns\": []}, {\"name\": \"opentelemetry-api\", \"version\": \"1.45.0\", \"vulns\": []}, {\"name\": \"pathspec\", \"version\": \"1.1.1\", \"vulns\": []}, {\"name\": \"pyyaml\", \"version\": \"6.0.3\", \"vulns\": []}, {\"name\": \"starlette\", \"version\": \"1.7.0\", \"vulns\": []}, {\"name\": \"stevedore\", \"version\": \"5.9.1\", \"vulns\": []}, {\"name\": \"truststore\", \"version\": \"0.10.4\", \"vulns\": []}, {\"name\": \"typing-inspection\", \"version\": \"0.4.4\", \"vulns\": []}, {\"name\": \"httptools\", \"version\": \"0.8.0\", \"vulns\": []}, {\"name\": \"watchfiles\", \"version\": \"1.3.0\", \"vulns\": []}, {\"name\": \"websockets\", \"version\": \"17.2\", \"vulns\": []}, {\"name\": \"certifi\", \"version\": \"2026.7.22\", \"vulns\": []}, {\"name\": \"rich\", \"version\": \"15.0.0\", \"vulns\": []}, {\"name\": \"pygments\", \"version\": \"2.21.0\", \"vulns\": []}, {\"name\": \"markdown-it-py\", \"version\": \"4.2.0\", \"vulns\": []}, {\"name\": \"mdurl\", \"version\": \"0.1.2\", \"vulns\": []}], \"fixes\": []}\nNo known vulnerabilities found\n",
+      "command": "pip-audit -r C:\\Users\\fikret\\Desktop\\multi-agent-pipeline\\requirements.txt --format json",
+      "error": null
+    },
+    {
+      "check_id": "dead_code",
+      "tool": "vulture",
+      "status": "pass",
+      "duration_sec": 0.3,
+      "summary": "0 kullanılmayan kod bulgusu",
+      "issue_count": 0,
+      "issues": [],
+      "raw_output": "",
+      "command": "vulture . --min-confidence 80 --exclude .venv,venv,env,.env,node_modules,.git,dist,build,__pycache__,.mypy_cache,.pytest_cache,.ruff_cache,site-packages",
+      "error": null
+    },
+    {
+      "check_id": "duplicate_code",
+      "tool": "jscpd",
+      "status": "pass",
+      "duration_sec": 2.11,
+      "summary": "Kod tekrarı %0.3",
+      "issue_count": 2,
+      "issues": [
+        {
+          "file": "quality_checker\\checks\\node_checks.py",
+          "line": 91,
+          "severity": "low",
+          "message": "Kopya kod: quality_checker\\checks\\node_checks.py:91 <-> quality_checker\\checks\\python_checks.py:70",
+          "rule": null
+        },
+        {
+          "file": "quality_checker\\checks\\python_checks.py",
+          "line": 59,
+          "severity": "low",
+          "message": "Kopya kod: quality_checker\\checks\\python_checks.py:59 <-> quality_checker\\checks\\python_checks.py:156",
+          "rule": null
+        }
+      ],
+      "raw_output": "\u001b[1mDuplications detection: Found 2 exact clones with 15(0.35%) duplicated lines in 27 (6 formats) files.\u001b[22m\n\u001b[32mJSON report saved to C:\\Users\\fikret\\Desktop\\multi-agent-pipeline\\.jscpd-report\\jscpd-report.json\u001b[39m\nnpm notice run npx\nnpm notice run jscpd . --reporters json --output C:\\Users\\fikret\\Desktop\\multi-agent-pipeline\\.jscpd-report --silent --ignore **/.venv/**,**/venv/**,**/env/**,**/.env/**,**/node_modules/**,**/.git/**,**/dist/**,**/build/**,**/__pycache__/**,**/.mypy_cache/**,**/.pytest_cache/**,**/.ruff_cache/**,**/site-packages/**\n",
+      "command": "npx --yes jscpd . --reporters json --output C:\\Users\\fikret\\Desktop\\multi-agent-pipeline\\.jscpd-report --silent --ignore **/.venv/**,**/venv/**,**/env/**,**/.env/**,**/node_modules/**,**/.git/**,**/dist/**,**/build/**,**/__pycache__/**,**/.mypy_cache/**,**/.pytest_cache/**,**/.ruff_cache/**,**/site-packages/**",
+      "error": null
+    }
+  ]
+}

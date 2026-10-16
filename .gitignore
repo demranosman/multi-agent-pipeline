@@ -4,8 +4,10 @@ __pycache__/
 *.pyc
 *.db
 _test_pipeline_*.db
+pipeline_*.md
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+.coverage
 .jscpd-report/
 workspaces/

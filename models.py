@@ -12,13 +12,11 @@ Dört tablo:
 """
 import enum
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from sqlalchemy import (
-    Column, String, Text, DateTime, Boolean, Integer,
-    ForeignKey, JSON, Enum as SAEnum
-)
-from sqlalchemy.orm import relationship
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Enum as SAEnum
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database import Base
 
@@ -47,38 +45,38 @@ def gen_id() -> str:
 def utcnow() -> datetime:
     """SQLAlchemy Column default'u için: datetime.utcnow() deprecated,
     timezone-aware bir eşdeğeri gerekiyor."""
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class Pipeline(Base):
     __tablename__ = "pipelines"
 
-    id = Column(String, primary_key=True, default=gen_id)
-    idea_text = Column(Text, nullable=False)
-    current_stage = Column(SAEnum(StageName), default=StageName.research)
-    status = Column(SAEnum(PipelineStatus), default=PipelineStatus.running)
-    created_at = Column(DateTime, default=utcnow)
-    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=gen_id)
+    idea_text: Mapped[str] = mapped_column(Text, nullable=False)
+    current_stage: Mapped[StageName] = mapped_column(SAEnum(StageName), default=StageName.research)
+    status: Mapped[PipelineStatus] = mapped_column(SAEnum(PipelineStatus), default=PipelineStatus.running)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
 
-    logs = relationship("PipelineLog", back_populates="pipeline")
-    messages = relationship("AgentMessage", back_populates="pipeline")
+    logs: Mapped[list["PipelineLog"]] = relationship(back_populates="pipeline")
+    messages: Mapped[list["AgentMessage"]] = relationship(back_populates="pipeline")
 
 
 class PipelineLog(Base):
     """Her aşamanın raporu. requires_approval'dan bağımsız, her zaman yazılır."""
     __tablename__ = "pipeline_logs"
 
-    id = Column(String, primary_key=True, default=gen_id)
-    pipeline_id = Column(String, ForeignKey("pipelines.id"), nullable=False)
-    stage = Column(SAEnum(StageName), nullable=False)
-    agent = Column(String, nullable=False)
-    summary = Column(Text, nullable=False)          # kısa, insan-okur özet
-    full_output = Column(JSON, nullable=True)        # yapılandırılmış tam çıktı
-    model = Column(String, nullable=True)             # bu log'u üreten ajanın kullandığı model
-    revision_round = Column(Integer, default=0)      # 0 = ilk deneme, 1+ = revizyon
-    created_at = Column(DateTime, default=utcnow)
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=gen_id)
+    pipeline_id: Mapped[str] = mapped_column(String, ForeignKey("pipelines.id"), nullable=False)
+    stage: Mapped[StageName] = mapped_column(SAEnum(StageName), nullable=False)
+    agent: Mapped[str] = mapped_column(String, nullable=False)
+    summary: Mapped[str] = mapped_column(Text, nullable=False)          # kısa, insan-okur özet
+    full_output: Mapped[dict | None] = mapped_column(JSON, nullable=True)  # yapılandırılmış tam çıktı
+    model: Mapped[str | None] = mapped_column(String, nullable=True)   # bu log'u üreten ajanın modeli
+    revision_round: Mapped[int] = mapped_column(Integer, default=0)      # 0 = ilk deneme, 1+ = revizyon
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
-    pipeline = relationship("Pipeline", back_populates="logs")
+    pipeline: Mapped["Pipeline"] = relationship(back_populates="logs")
 
 
 class MessageType(str, enum.Enum):
@@ -106,23 +104,23 @@ class AgentMessage(Base):
     """Ajanlar arası ya da kullanıcıdan gelen hedefli geri bildirim."""
     __tablename__ = "agent_messages"
 
-    id = Column(String, primary_key=True, default=gen_id)
-    pipeline_id = Column(String, ForeignKey("pipelines.id"), nullable=False)
-    from_agent = Column(String, nullable=False)       # "test_agent", "user", vb.
-    to_agent = Column(String, nullable=False)         # "coding_agent" vb. ya da "user"
-    message_type = Column(SAEnum(MessageType), nullable=False)
-    severity = Column(SAEnum(MessageSeverity), default=MessageSeverity.blocking)
-    content = Column(Text, nullable=False)             # insan-okur açıklama
-    payload = Column(JSON, nullable=True)              # makine-işlenebilir detay (opsiyonel)
-    stage_reference = Column(SAEnum(StageName), nullable=False)
-    target_log_id = Column(String, ForeignKey("pipeline_logs.id"), nullable=True)
-    parent_message_id = Column(String, ForeignKey("agent_messages.id"), nullable=True)
-    requires_response = Column(Boolean, default=False)
-    resolved_log_id = Column(String, ForeignKey("pipeline_logs.id"), nullable=True)
-    status = Column(SAEnum(MessageStatus), default=MessageStatus.pending)
-    created_at = Column(DateTime, default=utcnow)
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=gen_id)
+    pipeline_id: Mapped[str] = mapped_column(String, ForeignKey("pipelines.id"), nullable=False)
+    from_agent: Mapped[str] = mapped_column(String, nullable=False)       # "test_agent", "user", vb.
+    to_agent: Mapped[str] = mapped_column(String, nullable=False)         # "coding_agent" vb. ya da "user"
+    message_type: Mapped[MessageType] = mapped_column(SAEnum(MessageType), nullable=False)
+    severity: Mapped[MessageSeverity] = mapped_column(SAEnum(MessageSeverity), default=MessageSeverity.blocking)
+    content: Mapped[str] = mapped_column(Text, nullable=False)             # insan-okur açıklama
+    payload: Mapped[dict | None] = mapped_column(JSON, nullable=True)      # makine-işlenebilir detay
+    stage_reference: Mapped[StageName] = mapped_column(SAEnum(StageName), nullable=False)
+    target_log_id: Mapped[str | None] = mapped_column(String, ForeignKey("pipeline_logs.id"), nullable=True)
+    parent_message_id: Mapped[str | None] = mapped_column(String, ForeignKey("agent_messages.id"), nullable=True)
+    requires_response: Mapped[bool] = mapped_column(Boolean, default=False)
+    resolved_log_id: Mapped[str | None] = mapped_column(String, ForeignKey("pipeline_logs.id"), nullable=True)
+    status: Mapped[MessageStatus] = mapped_column(SAEnum(MessageStatus), default=MessageStatus.pending)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
-    pipeline = relationship("Pipeline", back_populates="messages")
+    pipeline: Mapped["Pipeline"] = relationship(back_populates="messages")
 
 
 class StageConfig(Base):
@@ -133,10 +131,32 @@ class StageConfig(Base):
     """
     __tablename__ = "stage_configs"
 
-    id = Column(String, primary_key=True, default=gen_id)
-    pipeline_id = Column(String, ForeignKey("pipelines.id"), nullable=True)
-    stage = Column(SAEnum(StageName), nullable=False)
-    requires_approval = Column(Boolean, default=False)
-    max_revision_rounds = Column(Integer, default=3)
-    model = Column(String, nullable=True)  # örn. "claude-opus-5" - boşsa orchestrator'daki varsayılan kullanılır
-    enabled = Column(Boolean, default=True)  # False ise bu aşama tamamen atlanır (ajan hiç çağrılmaz)
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=gen_id)
+    pipeline_id: Mapped[str | None] = mapped_column(String, ForeignKey("pipelines.id"), nullable=True)
+    stage: Mapped[StageName] = mapped_column(SAEnum(StageName), nullable=False)
+    requires_approval: Mapped[bool] = mapped_column(Boolean, default=False)
+    max_revision_rounds: Mapped[int] = mapped_column(Integer, default=3)
+    model: Mapped[str | None] = mapped_column(String, nullable=True)  # boşsa orchestrator varsayılanı
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)  # False ise bu aşama tamamen atlanır
+
+
+class PipelineContract(Base):
+    """Onaylanan bir aşamanın değişmez (immutable) çıktı kaydı.
+
+    Onay anında ilgili PipelineLog.full_output hash'lenip saklanır; aşama
+    sonradan yeniden çalıştırılıp çıktı değişirse ileri aşamalar bloklanır
+    (bkz. orchestrator._contract_violations).
+    """
+    __tablename__ = "pipeline_contracts"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=gen_id)
+    pipeline_id: Mapped[str] = mapped_column(
+        String, ForeignKey("pipelines.id"), nullable=False, index=True
+    )
+    stage: Mapped[StageName] = mapped_column(SAEnum(StageName), nullable=False)
+    source_log_id: Mapped[str | None] = mapped_column(
+        String, ForeignKey("pipeline_logs.id"), nullable=True
+    )
+    content_hash: Mapped[str] = mapped_column(String, nullable=False)
+    content: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)

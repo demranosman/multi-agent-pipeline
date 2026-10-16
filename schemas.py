@@ -1,9 +1,9 @@
 from datetime import datetime
-from typing import Optional, Any
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
-from models import StageName, PipelineStatus, MessageType, MessageSeverity
+from models import MessageSeverity, MessageType, PipelineStatus, StageName
 
 
 class PipelineCreate(BaseModel):
@@ -27,7 +27,8 @@ class LogOut(BaseModel):
     stage: StageName
     agent: str
     summary: str
-    full_output: Optional[Any]
+    full_output: Any | None = None
+    model: str | None = None
     revision_round: int
     created_at: datetime
 
@@ -38,10 +39,10 @@ class MessageCreate(BaseModel):
     message_type: MessageType
     severity: MessageSeverity = MessageSeverity.blocking
     content: str
-    payload: Optional[dict] = None
+    payload: dict | None = None
     stage_reference: StageName
-    target_log_id: Optional[str] = None
-    parent_message_id: Optional[str] = None
+    target_log_id: str | None = None
+    parent_message_id: str | None = None
     requires_response: bool = False
 
 
@@ -50,7 +51,7 @@ class MessageOut(MessageCreate):
 
     id: str
     status: str
-    resolved_log_id: Optional[str] = None
+    resolved_log_id: str | None = None
     created_at: datetime
 
 
@@ -62,5 +63,5 @@ class StageConfigUpdate(BaseModel):
     stage: StageName
     requires_approval: bool
     max_revision_rounds: int = 3
-    model: Optional[str] = None  # örn. "claude-opus-5", "claude-sonnet-5", "claude-haiku-4-5-20251001"
-    enabled: bool = True  # False -> bu aşama tamamen atlanır
+    model: str | None = None
+    enabled: bool = True

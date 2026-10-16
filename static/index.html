@@ -592,10 +592,10 @@
     const STAGES = ["research", "planning", "coding", "testing", "marketing"];
 
     const MODEL_OPTIONS = [
-      { group: "Anthropic Claude", options: ["claude-sonnet-5", "claude-opus-5", "claude-haiku-4-5-20251001", "claude-3-7-sonnet-20250219"] },
-      { group: "DeepSeek", options: ["deepseek-coder", "deepseek-chat", "deepseek-v3", "deepseek-v4"] },
-      { group: "Google Gemini", options: ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"] },
-      { group: "OpenAI", options: ["gpt-4o", "gpt-4o-mini", "o3-mini", "o1"] },
+      { group: "Anthropic Claude", options: ["claude-fable-5-1", "claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-4-5-20251001"] },
+      { group: "DeepSeek", options: ["deepseek-v4-pro", "deepseek-flash"] },
+      { group: "Google Gemini", options: ["gemini-3.8-flash", "gemini-3.1-pro-preview", "gemini-3.7-flash", "gemini-3.5-flash-lite"] },
+      { group: "OpenAI", options: ["gpt-6-astra", "gpt-6.1-sol", "gpt-6-luna"] },
     ];
 
     async function init() {
@@ -895,11 +895,11 @@
       });
 
       // Varsayılan modelleri ayarla
-      document.getElementById("model-research").value = "claude-sonnet-5";
-      document.getElementById("model-planning").value = "claude-opus-5";
-      document.getElementById("model-coding").value = "deepseek-coder";
+      document.getElementById("model-research").value = "claude-sonnet-5-5";
+      document.getElementById("model-planning").value = "claude-opus-5-5";
+      document.getElementById("model-coding").value = "deepseek-v4-pro";
       document.getElementById("model-testing").value = "claude-haiku-4-5-20251001";
-      document.getElementById("model-marketing").value = "claude-sonnet-5";
+      document.getElementById("model-marketing").value = "claude-sonnet-5-5";
     }
 
     async function saveStageConfig(stage) {

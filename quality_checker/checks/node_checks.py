@@ -37,7 +37,7 @@ def run_eslint(project_path: Path) -> CheckResult:
         return missing_tool_result("lint", "eslint", "npm install eslint --save-dev")
 
     cmd = [_local_cmd(project_path, "eslint"), ".", "--format", "json"]
-    code, out, err = run_command(cmd, project_path)
+    _, out, err = run_command(cmd, project_path)
 
     issues: list[Issue] = []
     try:
@@ -74,7 +74,7 @@ def run_tsc_type_check(project_path: Path) -> CheckResult:
         return missing_tool_result("type_check", "tsc", "npm install typescript --save-dev")
 
     cmd = [_local_cmd(project_path, "tsc"), "--noEmit", "--pretty", "false"]
-    code, out, err = run_command(cmd, project_path)
+    _, out, err = run_command(cmd, project_path)
 
     issues: list[Issue] = []
     for line in out.splitlines():
@@ -100,9 +100,9 @@ def run_npm_audit(project_path: Path) -> CheckResult:
         return missing_tool_result("dependency_audit", "npm", "Node.js/npm kurulu olmalı")
 
     cmd = ["npm", "audit", "--json"]
-    code, out, err = run_command(cmd, project_path)
+    _, out, err = run_command(cmd, project_path)
 
-    counts = {}
+    counts: dict[str, int] = {}
     try:
         data = json.loads(out) if out.strip() else {}
         counts = (data.get("metadata", {}) or {}).get("vulnerabilities", {}) or {}
@@ -125,7 +125,7 @@ def run_depcheck(project_path: Path) -> CheckResult:
         return missing_tool_result("dead_code", "depcheck", "npm install -g depcheck (veya npx ile otomatik)")
 
     cmd = ["npx", "--yes", "depcheck", "--json"]
-    code, out, err = run_command(cmd, project_path, timeout=180)
+    _, out, err = run_command(cmd, project_path, timeout=180)
 
     issues: list[Issue] = []
     try:
@@ -152,7 +152,7 @@ def run_jest_coverage(project_path: Path) -> CheckResult:
 
     cov_dir = project_path / ".pipeline_coverage"
     cmd = ["npx", "--yes", "jest", "--coverage", "--coverageReporters=json-summary", f"--coverageDirectory={cov_dir.name}", "--silent"]
-    code, out, err = run_command(cmd, project_path, timeout=600)
+    _, out, err = run_command(cmd, project_path, timeout=600)
 
     coverage_pct = None
     summary_file = cov_dir / "coverage-summary.json"

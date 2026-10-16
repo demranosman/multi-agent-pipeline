@@ -7,26 +7,46 @@ Her ajan fonksiyonunun imzası aynı:
 
 Dönüş değeri: {"summary": str, "full_output": dict, "question": str (opsiyonel)}
 """
-from typing import Optional, Any
-import json
-import os
+from __future__ import annotations
 
-from llm_gateway import call_llm
-from workspace import get_workspace_path
+import json
+from collections.abc import Callable
+
+from pydantic import BaseModel, ValidationError
+
+from agent_schemas import (
+    CodingOutput,
+    MarketingOutput,
+    PlanningOutput,
+    ResearchOutput,
+    TestingOutput,
+)
+from llm_gateway import call_llm_with_model
 from quality_checker.runner import run_pipeline
+from workspace import get_workspace_path
 
 
 def _parse_json_output(raw_text: str) -> dict:
     """Model bazen ```json ... ``` gibi code fence'lerle sarabiliyor,
-    onları temizleyip parse ediyoruz."""
+    onları temizleyip parse ediyoruz.
+
+    Dönüş her zaman bir JSON nesnesi (dict) olmalı; model liste/sayı/dize
+döndürürse bu bir sözleşme ihlalidir ve ValueError yükseltilir.
+    """
     cleaned = raw_text.strip()
     if cleaned.startswith("```"):
-        cleaned = cleaned.split("```")[1]
-        cleaned = cleaned.removeprefix("json").strip()
-    return json.loads(cleaned)
+        parts = cleaned.split("```")
+        if len(parts) >= 2:
+            cleaned = parts[1]
+        cleaned = cleaned.removeprefix("json").removeprefix("JSON").strip()
+
+    parsed = json.loads(cleaned)
+    if not isinstance(parsed, dict):
+        raise TypeError(f"JSON nesnesi bekleniyordu, gelen tip: {type(parsed).__name__}")
+    return parsed
 
 
-def _append_revision_note(prompt: str, revision_note: Optional[str]) -> str:
+def _append_revision_note(prompt: str, revision_note: str | None) -> str:
     if not revision_note:
         return prompt
     return (
@@ -40,15 +60,16 @@ def _call_structured_agent(
     user_prompt: str,
     model: str,
     fallback_summary: str,
-    summarize: "callable",
-    tools: Optional[list] = None,
+    summarize: Callable[[dict], str],
+    schema: type[BaseModel],
+    tools: list | None = None,
     max_tokens: int = 4096,
 ) -> dict:
     """
-    Ortak akış: LLM Gateway'i çağır -> JSON'a ayrıştır -> özet üret.
+    Ortak akış: LLM Gateway'i çağır -> JSON'a ayrıştır -> şemaya karşı doğrula -> özet üret.
     """
     try:
-        raw_text, stop_reason = call_llm(
+        raw_text, stop_reason, model_used = call_llm_with_model(
             system_prompt=system_prompt,
             user_prompt=user_prompt,
             model=model,
@@ -57,8 +78,9 @@ def _call_structured_agent(
         )
     except Exception as e:
         return {
-            "summary": f"{fallback_summary} çağrısı başarısız oldu: {str(e)}",
+            "summary": f"{fallback_summary} çağrısı başarısız oldu: {e!s}",
             "full_output": {"error": str(e), "model": model},
+            "model_used": model,
         }
 
     if stop_reason == "max_tokens":
@@ -69,17 +91,30 @@ def _call_structured_agent(
                 f"artırman gerekebilir."
             ),
             "full_output": {"raw_response": raw_text, "truncated": True},
+            "model_used": model_used,
         }
 
     try:
         parsed = _parse_json_output(raw_text)
-    except (json.JSONDecodeError, IndexError):
+    except (ValueError, TypeError) as exc:
+        # json.JSONDecodeError (ValueError) veya dict olmayan JSON (TypeError) buraya düşer.
         return {
-            "summary": f"{fallback_summary} ancak çıktı beklenen JSON formatında değildi.",
+            "summary": f"{fallback_summary} ancak çıktı beklenen JSON nesnesi formatında değildi ({exc}).",
             "full_output": {"raw_response": raw_text},
+            "model_used": model_used,
         }
 
-    return {"summary": summarize(parsed), "full_output": parsed}
+    try:
+        output = schema.model_validate(parsed).model_dump(exclude_none=True)
+    except ValidationError as exc:
+        # Yanlış tip/alan: çökmek yerine ham çıktıyı sakla, pipeline devam etsin.
+        return {
+            "summary": f"{fallback_summary} ancak çıktı beklenen şemaya uymadı ({exc.error_count()} doğrulama hatası).",
+            "full_output": {"raw_response": raw_text, "validation_error": str(exc)},
+            "model_used": model_used,
+        }
+
+    return {"summary": summarize(output), "full_output": output, "model_used": model_used}
 
 
 RESEARCH_SYSTEM_PROMPT = """\
@@ -106,8 +141,8 @@ Cevabını SADECE aşağıdaki JSON şemasında ver, başka hiçbir metin ekleme
 """
 
 
-def research_agent(context: dict, revision_note: Optional[str] = None,
-                    model: str = "claude-sonnet-5") -> dict:
+def research_agent(context: dict, revision_note: str | None = None,
+                    model: str = "claude-sonnet-5-5") -> dict:
     prompt = _append_revision_note(
         f"Değerlendirilecek fikir:\n{context['idea_text']}", revision_note
     )
@@ -120,13 +155,13 @@ def research_agent(context: dict, revision_note: Optional[str] = None,
             f"{competitor_count} rakip tespit edildi."
         )
 
-    # Web search sadece Anthropic'te ve model destekliyorsa verilir
     tools = [{"type": "web_search_20250305", "name": "web_search"}] if "claude" in model.lower() else None
 
     return _call_structured_agent(
         RESEARCH_SYSTEM_PROMPT, prompt, model,
         fallback_summary="Araştırma tamamlandı",
         summarize=summarize,
+        schema=ResearchOutput,
         tools=tools,
     )
 
@@ -147,13 +182,14 @@ Cevabını SADECE aşağıdaki JSON şemasında ver, başka metin ekleme:
   "key_integrations": ["<gerekli 3. parti servis/API>", ...],
   "estimated_weeks": <tam sayı>,
   "risks": ["<teknik risk>", ...],
+  "scope_patterns": ["<coding aşamasında izin verilen dosya/dizin deseni, ör. app/* veya tests/*>", ...],
   "reasoning": "<2-3 cümlelik gerekçe>"
 }
 """
 
 
-def planning_agent(context: dict, revision_note: Optional[str] = None,
-                    model: str = "claude-opus-5") -> dict:
+def planning_agent(context: dict, revision_note: str | None = None,
+                    model: str = "claude-opus-5-5") -> dict:
     research = context.get("research_report", {})
     prompt = _append_revision_note(
         f"Fikir:\n{context['idea_text']}\n\n"
@@ -172,6 +208,7 @@ def planning_agent(context: dict, revision_note: Optional[str] = None,
         PLANNING_SYSTEM_PROMPT, prompt, model,
         fallback_summary="Planlama tamamlandı",
         summarize=summarize,
+        schema=PlanningOutput,
         max_tokens=6000,
     )
 
@@ -196,8 +233,8 @@ Cevabını SADECE aşağıdaki JSON şemasında ver, başka metin ekleme:
 """
 
 
-def coding_agent(context: dict, revision_note: Optional[str] = None,
-                  model: str = "deepseek-coder") -> dict:
+def coding_agent(context: dict, revision_note: str | None = None,
+                  model: str = "deepseek-v4-pro") -> dict:
     plan = context.get("planning_report", {})
     prompt = _append_revision_note(
         f"Fikir:\n{context['idea_text']}\n\n"
@@ -214,6 +251,7 @@ def coding_agent(context: dict, revision_note: Optional[str] = None,
         CODING_SYSTEM_PROMPT, prompt, model,
         fallback_summary="Kodlama tamamlandı",
         summarize=summarize,
+        schema=CodingOutput,
         max_tokens=8000,
     )
 
@@ -245,12 +283,11 @@ Cevabını SADECE aşağıdaki JSON şemasında ver:
 """
 
 
-def testing_agent(context: dict, revision_note: Optional[str] = None,
+def testing_agent(context: dict, revision_note: str | None = None,
                    model: str = "claude-haiku-4-5-20251001") -> dict:
     code_report = context.get("coding_report", {})
     pipeline_id = context.get("pipeline_id")
 
-    # 1. Gerçek kalite denetim motorunu (quality_checker) çalıştır
     quality_report_dict = None
     if pipeline_id:
         try:
@@ -259,10 +296,12 @@ def testing_agent(context: dict, revision_note: Optional[str] = None,
                 qp_result = run_pipeline(workspace_path)
                 quality_report_dict = qp_result.to_dict()
         except Exception as exc:
-            quality_report_dict = {"error": f"Kalite denetimi motor hatası: {str(exc)}"}
+            quality_report_dict = {"error": f"Kalite denetimi motor hatası: {exc!s}"}
 
-    # 2. LLM için girdi hazırla
-    quality_summary_text = json.dumps(quality_report_dict, ensure_ascii=False, indent=2) if quality_report_dict else "Kalite denetim raporu bulunamadı."
+    quality_summary_text = (
+        json.dumps(quality_report_dict, ensure_ascii=False, indent=2)
+        if quality_report_dict else "Kalite denetim raporu bulunamadı."
+    )
     prompt = _append_revision_note(
         f"İncelenecek kod raporu:\n{json.dumps(code_report, ensure_ascii=False, indent=2)}\n\n"
         f"Gerçek Kalite ve Test Motoru Sonuçları:\n{quality_summary_text}",
@@ -282,14 +321,13 @@ def testing_agent(context: dict, revision_note: Optional[str] = None,
         TESTING_SYSTEM_PROMPT, prompt, model,
         fallback_summary="Test ve kalite denetimi tamamlandı",
         summarize=summarize,
+        schema=TestingOutput,
         max_tokens=6000,
     )
 
-    # Kalite motorunun ham sonucunu da full_output'a ekle
     if isinstance(result.get("full_output"), dict):
         result["full_output"]["quality_report"] = quality_report_dict
 
-        # Eğer kalite motoru FAIL verdiyse otomatik blocking finding ekle
         if quality_report_dict and quality_report_dict.get("overall_status") == "fail":
             existing_findings = result["full_output"].get("findings", [])
             has_blocking = any(f.get("severity") == "blocking" for f in existing_findings)
@@ -323,8 +361,8 @@ Cevabını SADECE aşağıdaki JSON şemasında ver, başka metin ekleme:
 """
 
 
-def marketing_agent(context: dict, revision_note: Optional[str] = None,
-                     model: str = "claude-sonnet-5") -> dict:
+def marketing_agent(context: dict, revision_note: str | None = None,
+                     model: str = "claude-sonnet-5-5") -> dict:
     research = context.get("research_report", {})
     prompt = _append_revision_note(
         f"Fikir:\n{context['idea_text']}\n\n"
@@ -345,6 +383,7 @@ def marketing_agent(context: dict, revision_note: Optional[str] = None,
         MARKETING_SYSTEM_PROMPT, prompt, model,
         fallback_summary="Pazarlama stratejisi tamamlandı",
         summarize=summarize,
+        schema=MarketingOutput,
         tools=tools,
     )
 

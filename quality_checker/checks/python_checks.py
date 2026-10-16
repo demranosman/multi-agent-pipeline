@@ -16,14 +16,22 @@ from quality_checker.checks.base import (
 )
 from quality_checker.models import CheckResult, Issue, Status
 
+# Windows mutlak yollari ("C:\\...") surucu harfi nedeniyle [^:] ile eslesmez;
+# istege bagli surucu onekini ayrica tan.
+_WIN_PATH = r"(?:[A-Za-z]:)?[^:]+"
+_MYPY_ERROR_RE = re.compile(
+    rf"^(?P<file>{_WIN_PATH}):(?P<line>\d+):(?:\d+:)?\s*error:\s*(?P<msg>.+)$"
+)
+_VULTURE_ERROR_RE = re.compile(rf"^(?P<file>{_WIN_PATH}):(?P<line>\d+):\s*(?P<msg>.+)$")
+
 
 @timed
 def run_ruff_lint(project_path: Path) -> CheckResult:
-    if not tool_available("ruff"):
+    if not tool_available("ruff", project_path):
         return missing_tool_result("lint", "ruff", "pip install ruff")
 
     cmd = ["ruff", "check", ".", "--output-format", "json"]
-    code, out, err = run_command(cmd, project_path)
+    _, out, err = run_command(cmd, project_path)
 
     issues: list[Issue] = []
     try:
@@ -49,16 +57,15 @@ def run_ruff_lint(project_path: Path) -> CheckResult:
 
 @timed
 def run_mypy_type_check(project_path: Path) -> CheckResult:
-    if not tool_available("mypy"):
+    if not tool_available("mypy", project_path):
         return missing_tool_result("type_check", "mypy", "pip install mypy")
 
     cmd = ["mypy", ".", "--no-error-summary", "--no-color-output", "--exclude", mypy_exclude_arg()]
-    code, out, err = run_command(cmd, project_path)
+    _, out, err = run_command(cmd, project_path)
 
     issues: list[Issue] = []
-    pattern = re.compile(r"^(?P<file>[^:]+):(?P<line>\d+):(?:\d+:)?\s*error:\s*(?P<msg>.+)$")
     for line in out.splitlines():
-        m = pattern.match(line.strip())
+        m = _MYPY_ERROR_RE.match(line.strip())
         if m:
             issues.append(Issue(
                 file=m.group("file"), line=int(m.group("line")),
@@ -75,11 +82,16 @@ def run_mypy_type_check(project_path: Path) -> CheckResult:
 
 @timed
 def run_bandit_security(project_path: Path) -> CheckResult:
-    if not tool_available("bandit"):
+    if not tool_available("bandit", project_path):
         return missing_tool_result("security", "bandit", "pip install bandit")
 
     cmd = ["bandit", "-r", ".", "-f", "json", "-q", "-x", bandit_exclude_arg()]
-    code, out, err = run_command(cmd, project_path)
+    # pyproject.toml varsa bandit ayarlarını (skip/exclude) uygula; aksi halde
+    # varsayılan tarama yapılır. -c olmadan [tool.bandit] bölümü okunmaz.
+    pyproject = project_path / "pyproject.toml"
+    if pyproject.exists():
+        cmd += ["-c", pyproject.name]
+    _, out, err = run_command(cmd, project_path)
 
     issues: list[Issue] = []
     try:
@@ -107,7 +119,7 @@ def run_bandit_security(project_path: Path) -> CheckResult:
 
 @timed
 def run_pip_audit(project_path: Path) -> CheckResult:
-    if not tool_available("pip-audit"):
+    if not tool_available("pip-audit", project_path):
         return missing_tool_result("dependency_audit", "pip-audit", "pip install pip-audit")
 
     # Sadece proje dizininde requirements.txt varsa tara (ortamın tamamını taramasın)
@@ -119,7 +131,7 @@ def run_pip_audit(project_path: Path) -> CheckResult:
         )
 
     cmd = ["pip-audit", "-r", req_file.name, "--format", "json"]
-    code, out, err = run_command(cmd, project_path)
+    _, out, err = run_command(cmd, project_path)
 
     issues: list[Issue] = []
     try:
@@ -146,16 +158,15 @@ def run_pip_audit(project_path: Path) -> CheckResult:
 
 @timed
 def run_vulture_deadcode(project_path: Path) -> CheckResult:
-    if not tool_available("vulture"):
+    if not tool_available("vulture", project_path):
         return missing_tool_result("dead_code", "vulture", "pip install vulture")
 
     cmd = ["vulture", ".", "--min-confidence", "80", "--exclude", vulture_exclude_arg()]
-    code, out, err = run_command(cmd, project_path)
+    _, out, err = run_command(cmd, project_path)
 
     issues: list[Issue] = []
-    pattern = re.compile(r"^(?P<file>[^:]+):(?P<line>\d+):\s*(?P<msg>.+)$")
     for line in out.splitlines():
-        m = pattern.match(line.strip())
+        m = _VULTURE_ERROR_RE.match(line.strip())
         if m:
             issues.append(Issue(
                 file=m.group("file"), line=int(m.group("line")),
@@ -173,7 +184,7 @@ def run_vulture_deadcode(project_path: Path) -> CheckResult:
 @timed
 def run_pytest_execution(project_path: Path) -> CheckResult:
     """Projede bulunan testleri (test_*.py) pytest ile çalıştırır."""
-    if not tool_available("pytest"):
+    if not tool_available("pytest", project_path):
         return missing_tool_result("test_runner", "pytest", "pip install pytest pytest-cov")
 
     test_files = list(project_path.glob("**/test_*.py")) + list(project_path.glob("**/*_test.py"))
@@ -184,13 +195,13 @@ def run_pytest_execution(project_path: Path) -> CheckResult:
         )
 
     cov_file = project_path / ".pipeline_coverage.json"
-    cmd = ["pytest", "-v", "--tb=short", f"--cov=.", f"--cov-report=json:{cov_file.name}"]
+    cmd = ["pytest", "-v", "--tb=short", "--cov=.", f"--cov-report=json:{cov_file.name}"]
     code, out, err = run_command(cmd, project_path, timeout=300)
 
     issues: list[Issue] = []
     if code != 0:
         for line in out.splitlines():
-            if line.startswith("FAILED") or line.startswith("ERROR"):
+            if line.startswith(("FAILED", "ERROR")):
                 issues.append(Issue(
                     severity="high",
                     message=line.strip(),
@@ -205,8 +216,9 @@ def run_pytest_execution(project_path: Path) -> CheckResult:
             pct = cov_data.get("totals", {}).get("percent_covered")
             if pct is not None:
                 summary += f", Kapsam: %{pct:.1f}"
-        except Exception:
-            pass
+        except (OSError, ValueError, TypeError, AttributeError) as exc:
+            # Kapsam raporu bozuksa sessizce yutma; özete yaz ki görünür olsun.
+            summary += f", Kapsam raporu okunamadı ({exc})"
         finally:
             try:
                 cov_file.unlink()

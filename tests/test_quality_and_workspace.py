@@ -1,23 +1,25 @@
 """
 Workspace ve Quality Checker entegrasyon birim testleri.
 """
-import pytest
-from pathlib import Path
 
-import workspace
+import pytest
+
 import orchestrator
-from quality_checker.models import Status, CheckResult, PipelineReport, Issue
-from quality_checker.runner import run_pipeline
+import workspace
 from llm_gateway import detect_provider
+from quality_checker.checks.base import tool_available
+from quality_checker.checks.python_checks import _MYPY_ERROR_RE, run_bandit_security
+from quality_checker.models import PipelineReport, Status
+from quality_checker.runner import run_pipeline
 
 
 def test_detect_provider():
-    assert detect_provider("claude-sonnet-5") == "anthropic"
-    assert detect_provider("deepseek-coder") == "deepseek"
-    assert detect_provider("deepseek-v4") == "deepseek"
-    assert detect_provider("gemini-2.5-flash") == "gemini"
-    assert detect_provider("gpt-4o") == "openai"
-    assert detect_provider("o3-mini") == "openai"
+    assert detect_provider("claude-opus-5-5") == "anthropic"
+    assert detect_provider("deepseek-v4-pro") == "deepseek"
+    assert detect_provider("deepseek-flash") == "deepseek"
+    assert detect_provider("gemini-3.8-flash") == "gemini"
+    assert detect_provider("gpt-6-astra") == "openai"
+    assert detect_provider("gpt-6.1-sol") == "openai"
 
 
 def test_workspace_write_and_read(tmp_path, monkeypatch):
@@ -63,6 +65,32 @@ def test_quality_checker_on_clean_python_code(tmp_path):
     assert "python" in report.project_types
     # Temiz kod üzerinde ruff, mypy, bandit, vulture geçer
     assert report.overall_status in (Status.PASS, Status.WARN)
+
+
+def test_bandit_respects_pyproject_config(tmp_path):
+    """Regresyon: bandit komutuna -c verilmezse pyproject'teki skips uygulanmaz."""
+    if not tool_available("bandit"):
+        pytest.skip("bandit yüklü değil")
+
+    (tmp_path / "pyproject.toml").write_text(
+        '[tool.bandit]\nskips = ["B101"]\n', encoding="utf-8"
+    )
+    (tmp_path / "sample.py").write_text("def f():\n    assert True\n", encoding="utf-8")
+
+    result = run_bandit_security(tmp_path)
+
+    assert "B101" not in {i.rule for i in result.issues}, "pyproject [tool.bandit] uygulanmadı"
+
+
+def test_mypy_error_regex_handles_windows_paths():
+    """Regresyon: mutlak Windows yolları (C:\\...) [^:]+ ile eşleşmiyordu."""
+    absolute = _MYPY_ERROR_RE.match(r"C:\proj\main.py:12: error: Incompatible types")
+    assert absolute is not None
+    assert absolute.group("file") == r"C:\proj\main.py"
+    assert absolute.group("line") == "12"
+
+    relative = _MYPY_ERROR_RE.match("main.py:12: error: Incompatible types")
+    assert relative is not None and relative.group("file") == "main.py"
 
 
 def test_dashboard_and_files_endpoints(client, monkeypatch, tmp_path):

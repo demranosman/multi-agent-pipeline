@@ -1,7 +1,6 @@
 """Her pipeline için izole disk çalışma alanını (workspaces/<pipeline_id>/) yönetir."""
 from __future__ import annotations
 
-import os
 import shutil
 from pathlib import Path
 from typing import Any
